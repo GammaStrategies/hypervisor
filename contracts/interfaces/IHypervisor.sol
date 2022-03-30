@@ -6,13 +6,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 interface IHypervisor {
-
   function deposit(
-      uint256,
-      uint256,
-      address,
-      address,
-      uint256[4] memory minIn
+    uint256,
+    uint256,
+    address,
+    address,
+    uint256[4] memory minIn
   ) external returns (uint256);
 
   function withdraw(
@@ -55,7 +54,6 @@ interface IHypervisor {
   );
 
   function compound() external returns (
-
     uint128 baseToken0Owed,
     uint128 baseToken1Owed,
     uint128 limitToken0Owed,

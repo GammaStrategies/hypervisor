@@ -26,13 +26,13 @@ const _abi = [
       },
       {
         internalType: "address",
-        name: "from",
+        name: "pos",
         type: "address",
       },
       {
-        internalType: "address",
-        name: "pos",
-        type: "address",
+        internalType: "uint256[4]",
+        name: "minIn",
+        type: "uint256[4]",
       },
     ],
     name: "deposit",

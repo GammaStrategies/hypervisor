@@ -21,13 +21,19 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface IUniProxyInterface extends ethers.utils.Interface {
   functions: {
-    "deposit(uint256,uint256,address,address,address)": FunctionFragment;
+    "deposit(uint256,uint256,address,address,uint256[4])": FunctionFragment;
     "getDepositAmount(address,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
     functionFragment: "deposit",
-    values: [BigNumberish, BigNumberish, string, string, string]
+    values: [
+      BigNumberish,
+      BigNumberish,
+      string,
+      string,
+      [BigNumberish, BigNumberish, BigNumberish, BigNumberish]
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "getDepositAmount",
@@ -91,8 +97,8 @@ export class IUniProxy extends BaseContract {
       deposit0: BigNumberish,
       deposit1: BigNumberish,
       to: string,
-      from: string,
       pos: string,
+      minIn: [BigNumberish, BigNumberish, BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -110,8 +116,8 @@ export class IUniProxy extends BaseContract {
     deposit0: BigNumberish,
     deposit1: BigNumberish,
     to: string,
-    from: string,
     pos: string,
+    minIn: [BigNumberish, BigNumberish, BigNumberish, BigNumberish],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -129,8 +135,8 @@ export class IUniProxy extends BaseContract {
       deposit0: BigNumberish,
       deposit1: BigNumberish,
       to: string,
-      from: string,
       pos: string,
+      minIn: [BigNumberish, BigNumberish, BigNumberish, BigNumberish],
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -151,8 +157,8 @@ export class IUniProxy extends BaseContract {
       deposit0: BigNumberish,
       deposit1: BigNumberish,
       to: string,
-      from: string,
       pos: string,
+      minIn: [BigNumberish, BigNumberish, BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -169,8 +175,8 @@ export class IUniProxy extends BaseContract {
       deposit0: BigNumberish,
       deposit1: BigNumberish,
       to: string,
-      from: string,
       pos: string,
+      minIn: [BigNumberish, BigNumberish, BigNumberish, BigNumberish],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
