@@ -10,23 +10,37 @@ import { parseUnits } from 'ethers/lib/utils'
 import { HardhatUserConfig } from 'hardhat/types'
 require('dotenv').config()
 const mnemonic = process.env.DEV_MNEMONIC || ''
-const archive_node = process.env.ETHEREUM_ARCHIVE_URL || ''
 
 const config: HardhatUserConfig = {
   networks: {
       hardhat: {
         allowUnlimitedContractSize: false,
       },
+      polygon: {
+          url: 'https://polygon-mainnet.g.alchemy.com/v2/',
+          accounts: [process.env.PRIVATE_KEY as string],
+          gasPrice: parseUnits('300', 'gwei').toNumber(),
+        },
       mainnet: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-          accounts: {
-            mnemonic,
-          },
+        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.MAINNET_API}`,
+        accounts: [process.env.PRIVATE_KEY as string],
+        gasPrice: parseUnits('80', 'gwei').toNumber(),
       },
-      goerli: {
-        url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-        accounts: [process.env.MAINNET_PRIVATE_KEY as string],
+      celo: {
+        url: "https://forno.celo.org",
+        accounts: [process.env.PRIVATE_KEY as string],
+        chainId: 42220
+      },    
+      optimism: {
+        url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.OPT_API}`,
+        accounts: [process.env.PRIVATE_KEY as string],
       },
+      arbitrum: {
+        url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ARB_API}`,
+        accounts: [process.env.PRIVATE_KEY as string],
+        gasPrice: parseUnits('300', 'gwei').toNumber(),
+      },
+
   },
   watcher: {
       compilation: {
@@ -50,14 +64,18 @@ const config: HardhatUserConfig = {
                 },
             },
         },
-        {
-          version: '0.6.11'
-        }
+        { version: '0.6.11' },
+        { version: '0.6.0' },
+        { version: '0.6.2' },
+        { version: '0.6.12' },
       ],
-
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_APIKEY,
+    // apiKey: process.env.CELO_APIKEY,
+    // apiKey: process.env.OPTIMISM_APIKEY,
+    // apiKey: process.env.ARBISCAN_APIKEY,
+    // apiKey: process.env.POLYGONSCAN_APIKEY,
   },
   mocha: {
     timeout: 2000000
