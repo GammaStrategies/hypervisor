@@ -370,6 +370,7 @@ contract MasterChef is BoringOwnable, BoringBatchable {
         uint128 accSushiPerShare;
         uint64 lastRewardTime;
         uint64 allocPoint;
+        IRewarder[] rewarders;
     }
 
     /// @notice Address of SUSHI contract.
@@ -379,8 +380,6 @@ contract MasterChef is BoringOwnable, BoringBatchable {
     PoolInfo[] public poolInfo;
     /// @notice Address of the LP token for each MCV2 pool.
     IERC20[] public lpToken;
-    /// @notice Address of each `IRewarder` contract in MCV2.
-    IRewarder[] public rewarder;
 
     /// @notice Info of each user that stakes LP tokens.
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
@@ -394,10 +393,11 @@ contract MasterChef is BoringOwnable, BoringBatchable {
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
     event Harvest(address indexed user, uint256 indexed pid, uint256 amount);
-    event LogPoolAddition(uint256 indexed pid, uint256 allocPoint, IERC20 indexed lpToken, IRewarder indexed rewarder);
-    event LogSetPool(uint256 indexed pid, uint256 allocPoint, IRewarder indexed rewarder, bool overwrite);
+    event LogPoolAddition(uint256 indexed pid, uint256 allocPoint, IERC20 indexed lpToken);
+    event LogSetPool(uint256 indexed pid, uint256 allocPoint);
     event LogUpdatePool(uint256 indexed pid, uint64 lastRewardTime, uint256 lpSupply, uint256 accSushiPerShare);
     event LogSushiPerSecond(uint256 sushiPerSecond);
+    event LogRewarderAdded(uint256 indexed pid, IRewarder indexed rewarder);
 
     /// @param _sushi The SUSHI token contract address.
     constructor(IERC20 _sushi) public {
@@ -413,30 +413,36 @@ contract MasterChef is BoringOwnable, BoringBatchable {
     /// DO NOT add the same LP token more than once. Rewards will be messed up if you do.
     /// @param allocPoint AP of the new pool.
     /// @param _lpToken Address of the LP ERC-20 token.
-    /// @param _rewarder Address of the rewarder delegate.
-    function add(uint256 allocPoint, IERC20 _lpToken, IRewarder _rewarder) public onlyOwner {
+    function add(uint256 allocPoint, IERC20 _lpToken) public onlyOwner {
         totalAllocPoint = totalAllocPoint.add(allocPoint);
         lpToken.push(_lpToken);
-        rewarder.push(_rewarder);
 
         poolInfo.push(PoolInfo({
             allocPoint: allocPoint.to64(),
             lastRewardTime: block.timestamp.to64(),
-            accSushiPerShare: 0
+            accSushiPerShare: 0,
+            rewarders: (new IRewarder[](0))
         }));
-        emit LogPoolAddition(lpToken.length.sub(1), allocPoint, _lpToken, _rewarder);
+        emit LogPoolAddition(lpToken.length.sub(1), allocPoint, _lpToken);
+    }
+
+    /// @notice Add a new Rewarder instance to a given pool 
+    /// @param _pid The index of the pool. See `poolInfo`.
+    /// @param _rewarder Address of the rewarder delegate.
+    function addRewarder(uint256 _pid, IRewarder _rewarder) public onlyOwner {
+        for( uint256 i = 0; i < poolInfo[_pid].rewarders.length; i++ ) {
+            require(address(poolInfo[_pid].rewarders[i]) != address(_rewarder), "already added");
+        }
+        poolInfo[_pid].rewarders.push(_rewarder);
     }
 
     /// @notice Update the given pool's SUSHI allocation point and `IRewarder` contract. Can only be called by the owner.
     /// @param _pid The index of the pool. See `poolInfo`.
     /// @param _allocPoint New AP of the pool.
-    /// @param _rewarder Address of the rewarder delegate.
-    /// @param overwrite True if _rewarder should be `set`. Otherwise `_rewarder` is ignored.
-    function set(uint256 _pid, uint256 _allocPoint, IRewarder _rewarder, bool overwrite) public onlyOwner {
+    function set(uint256 _pid, uint256 _allocPoint) public onlyOwner {
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
         poolInfo[_pid].allocPoint = _allocPoint.to64();
-        if (overwrite) { rewarder[_pid] = _rewarder; }
-        emit LogSetPool(_pid, _allocPoint, overwrite ? _rewarder : rewarder[_pid], overwrite);
+        emit LogSetPool(_pid, _allocPoint);
     }
 
     /// @notice Sets the sushi per second to be distributed. Can only be called by the owner.
@@ -503,9 +509,11 @@ contract MasterChef is BoringOwnable, BoringBatchable {
         user.rewardDebt = user.rewardDebt.add(int256(amount.mul(pool.accSushiPerShare) / ACC_SUSHI_PRECISION));
 
         // Interactions
-        IRewarder _rewarder = rewarder[pid];
-        if (address(_rewarder) != address(0)) {
-            _rewarder.onSushiReward(pid, to, to, 0, user.amount);
+        for( uint256 i = 0; i < poolInfo[pid].rewarders.length; i++) {
+            IRewarder _rewarder = poolInfo[pid].rewarders[i];
+            if (address(_rewarder) != address(0)) {
+                _rewarder.onSushiReward(pid, to, to, 0, user.amount);
+            }
         }
 
         lpToken[pid].safeTransferFrom(msg.sender, address(this), amount);
@@ -526,11 +534,12 @@ contract MasterChef is BoringOwnable, BoringBatchable {
         user.amount = user.amount.sub(amount);
 
         // Interactions
-        IRewarder _rewarder = rewarder[pid];
-        if (address(_rewarder) != address(0)) {
-            _rewarder.onSushiReward(pid, msg.sender, to, 0, user.amount);
-        }
-        
+        for( uint256 i = 0; i < poolInfo[pid].rewarders.length; i++) {
+            IRewarder _rewarder = poolInfo[pid].rewarders[i];
+            if (address(_rewarder) != address(0)) {
+                _rewarder.onSushiReward(pid, msg.sender, to, 0, user.amount);
+            }
+        }       
         lpToken[pid].safeTransfer(to, amount);
 
         emit Withdraw(msg.sender, pid, amount, to);
@@ -553,11 +562,12 @@ contract MasterChef is BoringOwnable, BoringBatchable {
             SUSHI.safeTransfer(to, _pendingSushi);
         }
         
-        IRewarder _rewarder = rewarder[pid];
-        if (address(_rewarder) != address(0)) {
-            _rewarder.onSushiReward( pid, msg.sender, to, _pendingSushi, user.amount);
-        }
-
+        for( uint256 i = 0; i < poolInfo[pid].rewarders.length; i++) {
+            IRewarder _rewarder = poolInfo[pid].rewarders[i];
+            if (address(_rewarder) != address(0)) {
+                _rewarder.onSushiReward( pid, msg.sender, to, _pendingSushi, user.amount);
+            }
+        }  
         emit Harvest(msg.sender, pid, _pendingSushi);
     }
     
@@ -578,11 +588,12 @@ contract MasterChef is BoringOwnable, BoringBatchable {
         // Interactions
         SUSHI.safeTransfer(to, _pendingSushi);
 
-        IRewarder _rewarder = rewarder[pid];
-        if (address(_rewarder) != address(0)) {
-            _rewarder.onSushiReward(pid, msg.sender, to, _pendingSushi, user.amount);
+        for( uint256 i = 0; i < poolInfo[pid].rewarders.length; i++) {
+            IRewarder _rewarder = poolInfo[pid].rewarders[i];
+            if (address(_rewarder) != address(0)) {
+              _rewarder.onSushiReward(pid, msg.sender, to, _pendingSushi, user.amount);
+            }
         }
-
         lpToken[pid].safeTransfer(to, amount);
 
         emit Withdraw(msg.sender, pid, amount, to);
@@ -598,11 +609,12 @@ contract MasterChef is BoringOwnable, BoringBatchable {
         user.amount = 0;
         user.rewardDebt = 0;
 
-        IRewarder _rewarder = rewarder[pid];
-        if (address(_rewarder) != address(0)) {
-            _rewarder.onSushiReward(pid, msg.sender, to, 0, 0);
+        for( uint256 i = 0; i < poolInfo[pid].rewarders.length; i++) {
+            IRewarder _rewarder = poolInfo[pid].rewarders[i];
+            if (address(_rewarder) != address(0)) {
+              _rewarder.onSushiReward(pid, msg.sender, to, 0, 0);
+            }
         }
-
         // Note: transfer can fail or succeed if `amount` is zero.
         lpToken[pid].safeTransfer(to, amount);
         emit EmergencyWithdraw(msg.sender, pid, amount, to);
