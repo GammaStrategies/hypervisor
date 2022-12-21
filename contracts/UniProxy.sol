@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/SignedSafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
+import "./algebra/interfaces/pool/IAlgebraPoolState.sol";
 
 /// @title UniProxy
 /// @notice Proxy contract for hypervisor positions management
@@ -205,16 +206,13 @@ contract UniProxy is ReentrancyGuard {
   /// @param _twapInterval Time intervals
   /// @return sqrtPriceX96 Sqrt price before interval
   function getSqrtTwapX96(address pos, uint32 _twapInterval) public view returns (uint160 sqrtPriceX96) {
-    if (_twapInterval == 0) {
-      /// return the current price if _twapInterval == 0
-      (sqrtPriceX96, , , , , , ) = IHypervisor(pos).pool().slot0();
-    } 
-    else {
+    (sqrtPriceX96, , , , , , ) = IHypervisor(pos).pool().globalState();
+    /// return the current price if _twapInterval == 0
+    if (_twapInterval != 0) {
       uint32[] memory secondsAgos = new uint32[](2);
       secondsAgos[0] = _twapInterval; /// from (before)
       secondsAgos[1] = 0; /// to (now)
-
-      (int56[] memory tickCumulatives, ) = IHypervisor(pos).pool().observe(secondsAgos);
+      (int56[] memory tickCumulatives, , ,) = IHypervisor(pos).pool().getTimepoints(secondsAgos);
 
       /// tick(imprecise as it's an integer) to price
       sqrtPriceX96 = TickMath.getSqrtRatioAtTick(

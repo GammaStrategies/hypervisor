@@ -68,30 +68,6 @@ contract Admin {
       (base0, base1) = IHypervisor(_hypervisor).pullLiquidity(tickLower, tickUpper, shares, minAmounts);
     }
 
-    function pullLiquidity(
-      address _hypervisor,
-      uint256 shares,
-      uint256[4] memory minAmounts 
-    ) external onlyAdvisor returns(
-        uint256 base0,
-        uint256 base1,
-        uint256 limit0,
-        uint256 limit1
-      ) {
-      (base0, base1, limit0, limit1) = IHypervisor(_hypervisor).pullLiquidity(shares, minAmounts);
-    }
-
-    function addLiquidity(
-        address _hypervisor,
-        int24 tickLower,
-        int24 tickUpper,
-        uint256 amount0,
-        uint256 amount1,
-        uint256[2] memory inMin
-    ) external onlyAdvisor {
-        IHypervisor(_hypervisor).addLiquidity(tickLower, tickUpper, amount0, amount1, inMin);
-    }
-
     /// @notice Add tokens to base liquidity
     /// @param _hypervisor Hypervisor Address
     /// @param amount0 Amount of token0 to add

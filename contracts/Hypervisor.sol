@@ -10,24 +10,24 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/drafts/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3MintCallback.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
+import "./algebra/interfaces/callback/IAlgebraMintCallback.sol";
+import "./algebra/interfaces/IAlgebraPool.sol";
+import "./algebra/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
-/// @title Hypervisor v1.3
+/// @title Hypervisor
 /// @notice A Uniswap V2-like interface with fungible liquidity to Uniswap V3
 /// which allows for arbitrary liquidity provision: one-sided, lop-sided, and balanced
-contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
+contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
-    IUniswapV3Pool public pool;
+    IAlgebraPool public pool;
     IERC20 public token0;
     IERC20 public token1;
-    uint8 public fee = 20;
+    uint8 public fee = 10;
     int24 public tickSpacing;
 
     int24 public baseLower;
@@ -37,10 +37,9 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
 
     address public owner;
     uint256 public deposit0Max;
-    uint256 public deposit1Max;
-    uint256 public maxTotalSupply;
-    address public whitelistedAddress;
-    address public feeRecipient;
+    uint256 public deposit1Max; 
+    uint256 public maxTotalSupply; address public whitelistedAddress;
+    address public defaultRecipient;
     bool public directDeposit; /// enter uni on deposit (avoid if client uses public rpc)
 
     uint256 public constant PRECISION = 1e36;
@@ -75,7 +74,6 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     event ZeroBurn(uint8 fee, uint256 fees0, uint256 fees1);
     event SetFee(uint8 newFee);
 
-
     /// @param _pool Uniswap V3 pool for which liquidity is managed
     /// @param _owner Owner of the Hypervisor
     constructor(
@@ -86,7 +84,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     ) ERC20Permit(name) ERC20(name, symbol) {
         require(_pool != address(0));
         require(_owner != address(0));
-        pool = IUniswapV3Pool(_pool);
+        pool = IAlgebraPool(_pool);
         token0 = IERC20(pool.token0());
         token1 = IERC20(pool.token1());
         require(address(token0) != address(0));
@@ -170,8 +168,8 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
         pool.burn(tickLower, tickUpper, 0);
         (uint256 owed0, uint256 owed1) = pool.collect(address(this), tickLower, tickUpper, type(uint128).max, type(uint128).max);
         emit ZeroBurn(fee, owed0, owed1);
-        if (owed0.div(fee) > 0 && token0.balanceOf(address(this)) > 0) token0.safeTransfer(feeRecipient, owed0.div(fee));
-        if (owed1.div(fee) > 0 && token1.balanceOf(address(this)) > 0) token1.safeTransfer(feeRecipient, owed1.div(fee));
+        if (owed0.div(fee) > 0 && token0.balanceOf(address(this)) > 0) token0.safeTransfer(defaultRecipient, owed0.div(fee));
+        if (owed1.div(fee) > 0 && token1.balanceOf(address(this)) > 0) token1.safeTransfer(defaultRecipient, owed1.div(fee));
       }      
     }
 
@@ -267,13 +265,13 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     /// @param _limitUpper The upper tick of the limit position
     /// @param  inMin min spend 
     /// @param  outMin min amount0,1 returned for shares of liq 
-    /// @param _feeRecipient Address of recipient of 10% of earned fees since last rebalance
+    /// @param feeRecipient Address of recipient of 10% of earned fees since last rebalance
     function rebalance(
         int24 _baseLower,
         int24 _baseUpper,
         int24 _limitLower,
         int24 _limitUpper,
-        address _feeRecipient,
+        address feeRecipient,
         uint256[4] memory inMin, 
         uint256[4] memory outMin
     ) nonReentrant external onlyOwner {
@@ -291,9 +289,8 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
           _limitUpper != _baseUpper ||
           _limitLower != _baseLower
         );
-        require(_feeRecipient != address(0));
-        feeRecipient = _feeRecipient;
-
+        require(feeRecipient != address(0));
+        if(defaultRecipient == address(0)) defaultRecipient = feeRecipient;
         /// update fees
         zeroBurn();
 
@@ -396,7 +393,8 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     ) internal {
         if (liquidity > 0) {
             mintCalled = true;
-            (uint256 amount0, uint256 amount1) = pool.mint(
+            (uint256 amount0, uint256 amount1, ) = pool.mint(
+                address(this),
                 address(this),
                 tickLower,
                 tickUpper,
@@ -467,12 +465,16 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
             uint128 tokensOwed1
         )
     {
-        bytes32 positionKey = keccak256(abi.encodePacked(address(this), tickLower, tickUpper));
-        (liquidity, , , tokensOwed0, tokensOwed1) = pool.positions(positionKey);
+      bytes32 positionKey;
+      address This = address(this);
+      assembly {
+        positionKey := or(shl(24, or(shl(24, This), and(tickLower, 0xFFFFFF))), and(tickUpper, 0xFFFFFF))
+      }
+        (liquidity, , , , tokensOwed0, tokensOwed1) = pool.positions(positionKey);
     }
 
     /// @notice Callback function of uniswapV3Pool mint
-    function uniswapV3MintCallback(
+    function algebraMintCallback(
         uint256 amount0,
         uint256 amount1,
         bytes calldata data
@@ -552,7 +554,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
         int24 tickUpper,
         uint128 liquidity
     ) internal view returns (uint256, uint256) {
-        (uint160 sqrtRatioX96, , , , , , ) = pool.slot0();
+        (uint160 sqrtRatioX96, , , , , , ) = pool.globalState();
         return
             LiquidityAmounts.getAmountsForLiquidity(
                 sqrtRatioX96,
@@ -574,7 +576,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
         uint256 amount0,
         uint256 amount1
     ) internal view returns (uint128) {
-        (uint160 sqrtRatioX96, , , , , , ) = pool.slot0();
+        (uint160 sqrtRatioX96, , , , , , ) = pool.globalState();
         return
             LiquidityAmounts.getLiquidityForAmounts(
                 sqrtRatioX96,
@@ -587,7 +589,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
 
     /// @return tick Uniswap pool's current price tick
     function currentTick() public view returns (int24 tick) {
-        (, tick, , , , , ) = pool.slot0();
+        (, tick, , , , , ) = pool.globalState();
     }
 
     function _uint128Safe(uint256 x) internal pure returns (uint128) {

@@ -69,11 +69,11 @@ const config: HardhatUserConfig = {
       ],
   },
   etherscan: {
-    apiKey: process.env.CELO_APIKEY,
-    // apiKey: process.env.ETHERSCAN_APIKEY,
+    // apiKey: process.env.CELO_APIKEY,
+    //apiKey: process.env.ETHERSCAN_APIKEY,
     // apiKey: process.env.OPTIMISM_APIKEY,
     // apiKey: process.env.ARBISCAN_APIKEY,
-    // apiKey: process.env.POLYGONSCAN_APIKEY,
+     apiKey: process.env.POLYGONSCAN_APIKEY,
   },
   mocha: {
     timeout: 2000000
