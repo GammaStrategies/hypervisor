@@ -16,8 +16,8 @@ import "./algebra/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
-/// @title Hypervisor
-/// @notice A Uniswap V2-like interface with fungible liquidity to Uniswap V3
+/// @title Hypervisor 1.3.1
+/// @notice A Uniswap V2-like interface with fungible liquidity to Quickswap
 /// which allows for arbitrary liquidity provision: one-sided, lop-sided, and balanced
 contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -37,9 +37,10 @@ contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
 
     address public owner;
     uint256 public deposit0Max;
-    uint256 public deposit1Max; 
-    uint256 public maxTotalSupply; address public whitelistedAddress;
-    address public defaultRecipient;
+    uint256 public deposit1Max;
+    uint256 public maxTotalSupply;
+    address public whitelistedAddress;
+    address public feeRecipient;
     bool public directDeposit; /// enter uni on deposit (avoid if client uses public rpc)
 
     uint256 public constant PRECISION = 1e36;
@@ -73,6 +74,7 @@ contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
 
     event ZeroBurn(uint8 fee, uint256 fees0, uint256 fees1);
     event SetFee(uint8 newFee);
+
 
     /// @param _pool Uniswap V3 pool for which liquidity is managed
     /// @param _owner Owner of the Hypervisor
@@ -168,8 +170,8 @@ contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
         pool.burn(tickLower, tickUpper, 0);
         (uint256 owed0, uint256 owed1) = pool.collect(address(this), tickLower, tickUpper, type(uint128).max, type(uint128).max);
         emit ZeroBurn(fee, owed0, owed1);
-        if (owed0.div(fee) > 0 && token0.balanceOf(address(this)) > 0) token0.safeTransfer(defaultRecipient, owed0.div(fee));
-        if (owed1.div(fee) > 0 && token1.balanceOf(address(this)) > 0) token1.safeTransfer(defaultRecipient, owed1.div(fee));
+        if (owed0.div(fee) > 0 && token0.balanceOf(address(this)) > 0) token0.safeTransfer(feeRecipient, owed0.div(fee));
+        if (owed1.div(fee) > 0 && token1.balanceOf(address(this)) > 0) token1.safeTransfer(feeRecipient, owed1.div(fee));
       }      
     }
 
@@ -265,13 +267,13 @@ contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
     /// @param _limitUpper The upper tick of the limit position
     /// @param  inMin min spend 
     /// @param  outMin min amount0,1 returned for shares of liq 
-    /// @param feeRecipient Address of recipient of 10% of earned fees since last rebalance
+    /// @param _feeRecipient Address of recipient of 10% of earned fees since last rebalance
     function rebalance(
         int24 _baseLower,
         int24 _baseUpper,
         int24 _limitLower,
         int24 _limitUpper,
-        address feeRecipient,
+        address _feeRecipient,
         uint256[4] memory inMin, 
         uint256[4] memory outMin
     ) nonReentrant external onlyOwner {
@@ -289,8 +291,9 @@ contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
           _limitUpper != _baseUpper ||
           _limitLower != _baseLower
         );
-        require(feeRecipient != address(0));
-        if(defaultRecipient == address(0)) defaultRecipient = feeRecipient;
+        require(_feeRecipient != address(0));
+        feeRecipient = _feeRecipient;
+
         /// update fees
         zeroBurn();
 
