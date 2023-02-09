@@ -22,7 +22,6 @@ contract UniProxy is ReentrancyGuard {
   mapping(address => Position) public positions;
 
   address public owner;
-  bool public freeDeposit = false;
   bool public twapCheck = false;
   uint32 public twapInterval = 30;
   uint256 public depositDelta = 1010;
@@ -249,12 +248,6 @@ contract UniProxy is ReentrancyGuard {
     p.deposit1Max = deposit1Max;
     p.maxTotalSupply = maxTotalSupply;
     emit CustomDeposit(pos, deposit0Max, deposit1Max, maxTotalSupply);
-  }
-
-  /// @notice Toogle free deposit
-  function toggleDepositFree() external onlyOwner {
-    freeDeposit = !freeDeposit;
-    emit DepositFreeToggled();
   }
 
   /// @notice Toggle deposit override
