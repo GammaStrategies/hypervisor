@@ -17,6 +17,86 @@ import {
   limitTicksFromCurrentTick
 } from './shared/tick'
 
+
+task('deploy-masterchef', 'Deploy admin contract')
+  .addParam('sushi', 'reward rate')
+  .setAction(async (args, { ethers, run, network }) => {
+    console.log('Network')
+    console.log('  ', network.name)
+    console.log('Task Args')
+    console.log(args)
+
+    // compile
+
+    await run('compile')
+
+    // get signer
+
+    const signer = (await ethers.getSigners())[0]
+    console.log('Signer')
+    console.log('  at', signer.address)
+    console.log('  ETH', formatEther(await signer.getBalance()))
+
+    // deploy contracts
+
+    const chefFactory = await ethers.getContractFactory('MasterChef')
+
+    const chef = await deployContract(
+      'MasterChef',
+      await ethers.getContractFactory('MasterChef'),
+      signer,
+      [args.sushi]
+    )
+
+    await chef.deployTransaction.wait(15)
+    await run('verify:verify', {
+      address: chef.address,
+      constructorArguments: [args.sushi]
+    })
+
+})
+
+task('deploy-rewarder', 'Deploy admin contract')
+  .addParam('rewardToken', 'reward rate')
+  .addParam('rate', 'reward rate')
+  .addParam('chef', 'reward rate')
+  .setAction(async (args, { ethers, run, network }) => {
+    console.log('Network')
+    console.log('  ', network.name)
+    console.log('Task Args')
+    console.log(args)
+
+    // compile
+
+    await run('compile')
+
+    // get signer
+
+    const signer = (await ethers.getSigners())[0]
+    console.log('Signer')
+    console.log('  at', signer.address)
+    console.log('  ETH', formatEther(await signer.getBalance()))
+
+    // deploy contracts
+
+    const chefFactory = await ethers.getContractFactory('Rewarder')
+
+    const chef = await deployContract(
+      'Rewarder',
+      await ethers.getContractFactory('Rewarder'),
+      signer,
+      [args.rewardToken, args.rate, args.chef]
+    )
+
+    await chef.deployTransaction.wait(30)
+    await run('verify:verify', {
+      address: chef.address,
+      constructorArguments: [args.rewardToken, args.rate, args.chef]
+    })
+
+});
+
+
 task('deploy-router', 'Deploy Hypervisor contract')
   .addParam('token0', 'token address')
   .addParam('token1', 'token address')
@@ -130,53 +210,10 @@ task('add-chef-pool', 'Deploy admin contract')
     await chef.add(args.rewardPerBlock, args.lpToken, args.withUpdate);
 });
 
-task('deploy-masterchef', 'Deploy admin contract')
-  .addParam('rewardToken', 'reward rate')
-  .addParam('rewardPerBlock', 'reward rate')
-  .addParam('startBlock', 'start block')
-  .addParam('endBlock', 'end block')
-  .setAction(async (args, { ethers, run, network }) => {
-    console.log('Network')
-    console.log('  ', network.name)
-    console.log('Task Args')
-    console.log(args)
-
-    // compile
-
-    await run('compile')
-
-    // get signer
-
-    const signer = (await ethers.getSigners())[0]
-    console.log('Signer')
-    console.log('  at', signer.address)
-    console.log('  ETH', formatEther(await signer.getBalance()))
-
-    // deploy contracts
-
-    const chefFactory = await ethers.getContractFactory('MasterChef')
-
-    const chef = await deployContract(
-      'MasterChef',
-      await ethers.getContractFactory('MasterChef'),
-      signer,
-      [args.rewardToken, args.rewardPerBlock, args.startBlock, args.endBlock]
-    )
-
-    await chef.deployTransaction.wait(5)
-    await run('verify:verify', {
-      address: chef.address,
-      constructorArguments: [args.rewardToken, args.rewardPerBlock, args.startBlock, args.endBlock]
-
-    })
-
-});
-
-
 task('deploy-token', 'Deploy admin contract')
-  .addParam('name', 'admin account')
-  .addParam('symbol', 'advisor account')
-  .addParam('decimals', 'advisor account')
+  // .addParam('name', 'admin account')
+  // .addParam('symbol', 'advisor account')
+  // .addParam('decimals', 'advisor account')
   .setAction(async (args, { ethers, run, network }) => {
     console.log('Network')
     console.log('  ', network.name)
@@ -196,23 +233,24 @@ task('deploy-token', 'Deploy admin contract')
 
     // deploy contracts
 
-    const adminFactory = await ethers.getContractFactory('MockToken')
+    const adminFactory = await ethers.getContractFactory('MintableToken')
 
     const admin = await deployContract(
-      'MockToken',
-      await ethers.getContractFactory('MockToken'),
+      'MintableToken',
+      await ethers.getContractFactory('MintableToken'),
       signer,
-      [args.name, args.symbol, args.decimals]
+      // [args.name, args.symbol, args.decimals]
+      []
     )
 
     await admin.deployTransaction.wait(5)
     await run('verify:verify', {
       address: admin.address,
-      constructorArguments: [args.name, args.symbol, args.decimals]
+      // constructorArguments: [args.name, args.symbol, args.decimals]
+      constructorArguments: []
     })
 
 });
-
 
 task('deploy-admin', 'Deploy admin contract')
   .addParam('admin', 'admin account')
