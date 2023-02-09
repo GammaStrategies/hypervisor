@@ -30,6 +30,7 @@ interface UniProxyInterface extends ethers.utils.Interface {
     "depositDelta()": FunctionFragment;
     "freeDeposit()": FunctionFragment;
     "getDepositAmount(address,address,uint256)": FunctionFragment;
+    "getListed(address,address)": FunctionFragment;
     "getSqrtTwapX96(address,uint32)": FunctionFragment;
     "owner()": FunctionFragment;
     "positions(address)": FunctionFragment;
@@ -91,6 +92,10 @@ interface UniProxyInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "getDepositAmount",
     values: [string, string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getListed",
+    values: [string, string]
   ): string;
   encodeFunctionData(
     functionFragment: "getSqrtTwapX96",
@@ -183,6 +188,7 @@ interface UniProxyInterface extends ethers.utils.Interface {
     functionFragment: "getDepositAmount",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "getListed", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getSqrtTwapX96",
     data: BytesLike
@@ -433,6 +439,12 @@ export class UniProxy extends BaseContract {
       [BigNumber, BigNumber] & { amountStart: BigNumber; amountEnd: BigNumber }
     >;
 
+    getListed(
+      pos: string,
+      i: string,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     getSqrtTwapX96(
       pos: string,
       _twapInterval: BigNumberish,
@@ -588,6 +600,12 @@ export class UniProxy extends BaseContract {
     [BigNumber, BigNumber] & { amountStart: BigNumber; amountEnd: BigNumber }
   >;
 
+  getListed(
+    pos: string,
+    i: string,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   getSqrtTwapX96(
     pos: string,
     _twapInterval: BigNumberish,
@@ -742,6 +760,12 @@ export class UniProxy extends BaseContract {
     ): Promise<
       [BigNumber, BigNumber] & { amountStart: BigNumber; amountEnd: BigNumber }
     >;
+
+    getListed(
+      pos: string,
+      i: string,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
 
     getSqrtTwapX96(
       pos: string,
@@ -1035,6 +1059,12 @@ export class UniProxy extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    getListed(
+      pos: string,
+      i: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     getSqrtTwapX96(
       pos: string,
       _twapInterval: BigNumberish,
@@ -1161,6 +1191,12 @@ export class UniProxy extends BaseContract {
       pos: string,
       token: string,
       _deposit: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getListed(
+      pos: string,
+      i: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

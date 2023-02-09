@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/math/SignedSafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 
-/// @title UniProxy
+/// @title UniProxy v1.1.1
 /// @notice Proxy contract for hypervisor positions management
 contract UniProxy is ReentrancyGuard {
   using SafeERC20 for IERC20;
@@ -24,7 +24,7 @@ contract UniProxy is ReentrancyGuard {
   address public owner;
   bool public freeDeposit = false;
   bool public twapCheck = false;
-  uint32 public twapInterval = 1 hours;
+  uint32 public twapInterval = 30;
   uint256 public depositDelta = 1010;
   uint256 public deltaScale = 1000; /// must be a power of 10
   uint256 public priceThreshold = 100;
@@ -99,17 +99,10 @@ contract UniProxy is ReentrancyGuard {
     require(to != address(0), "to should be non-zero");
     Position storage p = positions[pos];
 
-    if (p.version < 3) {
-      /// requires asset transfer to proxy
-      if (deposit0 != 0) {
-        IHypervisor(pos).token0().safeTransferFrom(msg.sender, address(this), deposit0);
-      }
-      if (deposit1 != 0) {
-        IHypervisor(pos).token1().safeTransferFrom(msg.sender, address(this), deposit1);
-      }
-    }
+    if(!p.freeDeposit) require(deposit0 > 0 && deposit1 > 0, "must deposit to both sides");
+    /// @param newRebalancer New Rebalancer Address
 
-    if (!freeDeposit && !p.list[msg.sender] && !p.freeDeposit) { 
+    if (!p.list[msg.sender]) { 
       // freeDeposit off and hypervisor msg.sender not on list
       if (deposit0 > 0) {
         (uint256 test1Min, uint256 test1Max) = getDepositAmount(pos, address(IHypervisor(pos).token0()), deposit0);
@@ -308,6 +301,12 @@ contract UniProxy is ReentrancyGuard {
   function toggleTwap() external onlyOwner {
     twapCheck = !twapCheck;
     emit TwapToggled();
+  }
+
+  // @notice check if an address is whitelisted for hype
+  function getListed(address pos, address i) public view returns(bool) {
+    Position storage p = positions[pos];
+    return p.list[i];
   }
 
   /// @notice Append whitelist to hypervisor
