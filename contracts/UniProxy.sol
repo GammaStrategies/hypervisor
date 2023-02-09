@@ -99,7 +99,6 @@ contract UniProxy is ReentrancyGuard {
     Position storage p = positions[pos];
 
     if(!p.freeDeposit) require(deposit0 > 0 && deposit1 > 0, "must deposit to both sides");
-    /// @param newRebalancer New Rebalancer Address
 
     if (!p.list[msg.sender]) { 
       // freeDeposit off and hypervisor msg.sender not on list
