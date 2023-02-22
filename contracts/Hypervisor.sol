@@ -17,7 +17,7 @@ import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
 /// @title Hypervisor 1.3.1
-/// @notice A Uniswap V2-like interface with fungible liquidity to Quickswap
+/// @notice A Uniswap V2-like interface with fungible liquidity to Zyberswap
 /// which allows for arbitrary liquidity provision: one-sided, lop-sided, and balanced
 contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
     using SafeERC20 for IERC20;
