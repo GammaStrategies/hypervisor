@@ -710,6 +710,13 @@ contract Rewarder is IRewarder,  BoringOwnable, ReentrancyGuard{
         _;
     }
 
+		address public funder;
+
+    modifier onlyFunder() {
+        require(msg.sender == funder, "Ownable: caller is not the funder");
+        _;
+    }
+
     event LogOnReward(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
     event LogPoolAddition(uint256 indexed pid, uint256 allocPoint);
     event LogSetPool(uint256 indexed pid, uint256 allocPoint);
@@ -721,6 +728,7 @@ contract Rewarder is IRewarder,  BoringOwnable, ReentrancyGuard{
         rewardToken = _rewardToken;
         rewardPerSecond = _rewardPerSecond;
         MASTERCHEF_V2 = _MASTERCHEF_V2;
+				funder = msg.sender;
         rewardToken.approve(_MASTERCHEF_V2, type(uint256).max);
     }
 
@@ -830,6 +838,14 @@ contract Rewarder is IRewarder,  BoringOwnable, ReentrancyGuard{
             poolInfo[pid] = pool;
             emit LogUpdatePool(pid, pool.lastRewardTime, lpSupply, pool.accSushiPerShare);
         }
+    }
+
+    function transferFunder(address newFunder) public onlyFunder {
+        funder = newFunder;
+    }
+
+    function reclaimTokens(uint256 amount, address payable to) public onlyFunder {
+			rewardToken.safeTransfer(to, amount);
     }
 
 }

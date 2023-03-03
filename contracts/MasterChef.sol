@@ -628,11 +628,4 @@ contract MasterChef is BoringOwnable, BoringBatchable, ReentrancyGuard {
       return address(poolInfo[_pid].rewarders[_rid]);
     } 
 
-    function reclaimTokens(uint256 _pid, uint256 _rid, uint256 amount, address payable to) public onlyOwner {
-      IERC20(poolInfo[_pid].rewarders[_rid].rewardToken()).safeTransferFrom(
-        address(poolInfo[_pid].rewarders[_rid]),
-        to, 
-        amount
-      );
-    }
 }
