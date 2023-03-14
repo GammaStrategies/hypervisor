@@ -1,7 +1,5 @@
-import '@nomiclabs/hardhat-ethers'
-import '@nomiclabs/hardhat-etherscan'
-import '@nomiclabs/hardhat-waffle'
-import '@typechain/hardhat'
+import "@nomicfoundation/hardhat-toolbox"
+import "@nomicfoundation/hardhat-chai-matchers"
 import "hardhat-watcher"
 import './scripts/copy-uniswap-v3-artifacts.ts'
 import './tasks/hypervisor'
@@ -74,6 +72,10 @@ const config: HardhatUserConfig = {
     // apiKey: process.env.OPTIMISM_APIKEY,
     // apiKey: process.env.ARBISCAN_APIKEY,
     // apiKey: process.env.POLYGONSCAN_APIKEY,
+  },
+  typechain: {
+    outDir: "typechain",
+    target: "ethers-v5",
   },
   mocha: {
     timeout: 2000000

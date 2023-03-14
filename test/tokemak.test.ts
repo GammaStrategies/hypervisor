@@ -1,11 +1,10 @@
-import { ethers, waffle } from 'hardhat'
+import { ethers } from 'hardhat'
 import { BigNumber, BigNumberish, constants } from 'ethers'
-import chai from 'chai'
 import { expect } from 'chai'
 import { fixture, tokeHypervisorTestFixture } from "./shared/fixtures"
-import { solidity } from "ethereum-waffle"
+import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers"
 
-chai.use(solidity)
 
 import {
     FeeAmount,
@@ -25,12 +24,8 @@ import {
     TestERC20
 } from "../typechain"
 
-const createFixtureLoader = waffle.createFixtureLoader
 
 describe('Tokemak', () => {
-    const [wallet, alice, manager, carol, other,
-           user0, user1, user2, user3, user4] = waffle.provider.getWallets()
-
     const minSqrtPrice = 4295128740;
     const maxSqrtPrice = 1461446703485210103287273052203988822378723970341;
 
@@ -43,12 +38,20 @@ describe('Tokemak', () => {
     let tokeHypervisorFactory: TokeHypervisorFactory
     let tokeHypervisor: TokeHypervisor
 
-    let loadFixture: ReturnType<typeof createFixtureLoader>
-    before('create fixture loader', async () => {
-        loadFixture = createFixtureLoader([wallet, other])
-    })
+    // Wallets
+    let wallet: SignerWithAddress
+    let alice: SignerWithAddress
+    let manager: SignerWithAddress
+    let carol: SignerWithAddress
+    let other: SignerWithAddress
+    let user0: SignerWithAddress
+    let user1: SignerWithAddress
+    let user2: SignerWithAddress
+    let user3: SignerWithAddress
+    let user4: SignerWithAddress
 
     beforeEach('deploy contracts', async () => {
+        [wallet, alice, manager, carol, other, user0, user1, user2, user3, user4] = await ethers.getSigners();
         ({ token0, token1, token2, factory, router, tokeHypervisorFactory } = await loadFixture(tokeHypervisorTestFixture))
         await tokeHypervisorFactory.createHypervisor(token0.address, token1.address, FeeAmount.MEDIUM,"Test Visor", "TVR");
         const tokeHypervisorAddress = await tokeHypervisorFactory.getHypervisor(token0.address, token1.address, FeeAmount.MEDIUM)
