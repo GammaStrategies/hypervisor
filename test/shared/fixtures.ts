@@ -2,6 +2,16 @@ import { BigNumber } from 'ethers'
 import { ethers } from 'hardhat'
 
 import {
+    abi as FACTORY_ABI,
+    bytecode as FACTORY_BYTECODE,
+} from '@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json'
+
+import {
+    abi as SWAPROUTER_ABI,
+    bytecode as SWAPROUTER_BYTECODE,
+} from '@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json'
+
+import {
     TestERC20,
     IUniswapV3Factory,
     ISwapRouter,
@@ -10,21 +20,19 @@ import {
     TokeHypervisorFactory
 } from "../../typechain";
 
-import { Fixture } from 'ethereum-waffle'
-
 interface UniswapV3Fixture {
     factory: IUniswapV3Factory
     router: ISwapRouter
 }
 
 async function uniswapV3Fixture(): Promise<UniswapV3Fixture> {
-    const factoryFactory = await ethers.getContractFactory('UniswapV3Factory')
+    const factoryFactory = await ethers.getContractFactory(FACTORY_ABI, FACTORY_BYTECODE)
     const factory = (await factoryFactory.deploy()) as IUniswapV3Factory
 
     const tokenFactory = await ethers.getContractFactory('TestERC20')
     const WETH = (await tokenFactory.deploy(BigNumber.from(2).pow(255))) as TestERC20 // TODO: change to real WETH
 
-    const routerFactory = await ethers.getContractFactory('SwapRouter')
+    const routerFactory = await ethers.getContractFactory(SWAPROUTER_ABI, SWAPROUTER_BYTECODE)
     const router = (await routerFactory.deploy(factory.address, WETH.address)) as ISwapRouter
     return { factory, router }
 }
@@ -81,7 +89,7 @@ async function ourFactoryFixture(): Promise<OurFactoryFixture> {
 
 type allContractsFixture = UniswapV3Fixture & TokensFixture & OurFactoryFixture
 
-export const fixture: Fixture<allContractsFixture> = async function (): Promise<allContractsFixture> {
+export async function fixture(): Promise<allContractsFixture> {
     const { factory, router } = await uniswapV3Fixture()
     const { token0, token1, token2 } = await tokensFixture()
     const { ourFactory } = await ourFactoryFixture()
@@ -98,7 +106,7 @@ export const fixture: Fixture<allContractsFixture> = async function (): Promise<
 
 type HypervisorTestFixture = UniswapV3Fixture & TokensFixture & HypervisorFactoryFixture
 
-export const hypervisorTestFixture: Fixture<HypervisorTestFixture> = async function (): Promise<HypervisorTestFixture> {
+export async function hypervisorTestFixture(): Promise<HypervisorTestFixture> {
     const { factory, router } = await uniswapV3Fixture()
     const { token0, token1, token2 } = await tokensFixture()
     const { hypervisorFactory } = await hypervisorFactoryFixture(factory)
@@ -115,7 +123,7 @@ export const hypervisorTestFixture: Fixture<HypervisorTestFixture> = async funct
 
 type TokeHypervisorTestFixture = UniswapV3Fixture & TokensFixture & TokeHypervisorFactoryFixture
 
-export const tokeHypervisorTestFixture: Fixture<TokeHypervisorTestFixture> = async function (): Promise<TokeHypervisorTestFixture> {
+export async function tokeHypervisorTestFixture(): Promise<TokeHypervisorTestFixture> {
     const { factory, router } = await uniswapV3Fixture()
     const { token0, token1, token2 } = await tokensFixture()
     const { tokeHypervisorFactory } = await tokeHypervisorFactoryFixture(factory)

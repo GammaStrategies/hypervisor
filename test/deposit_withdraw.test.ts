@@ -1,11 +1,10 @@
-import { ethers, waffle } from 'hardhat'
+import { ethers } from 'hardhat'
 import { BigNumber, BigNumberish, constants } from 'ethers'
 import chai from 'chai'
 import { expect } from 'chai'
 import { fixture, hypervisorTestFixture } from "./shared/fixtures"
-import { solidity } from "ethereum-waffle"
-
-chai.use(solidity)
+import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 
 import {
     FeeAmount,
@@ -25,11 +24,8 @@ import {
     TestERC20
 } from "../typechain"
 
-const createFixtureLoader = waffle.createFixtureLoader
 
 describe('Hypervisor', () => {
-    const [wallet, alice, bob, carol, other,
-           user0, user1, user2, user3, user4] = waffle.provider.getWallets()
 
     let factory: IUniswapV3Factory
     let router: ISwapRouter
@@ -39,13 +35,21 @@ describe('Hypervisor', () => {
     let uniswapPool: IUniswapV3Pool
     let hypervisorFactory: HypervisorFactory
     let hypervisor: Hypervisor
-
-    let loadFixture: ReturnType<typeof createFixtureLoader>
-    before('create fixture loader', async () => {
-        loadFixture = createFixtureLoader([wallet, other])
-    })
+    
+    // Wallets
+    let wallet: SignerWithAddress
+    let alice: SignerWithAddress
+    let bob: SignerWithAddress
+    let carol: SignerWithAddress
+    let other: SignerWithAddress
+    let user0: SignerWithAddress
+    let user1: SignerWithAddress
+    let user2: SignerWithAddress
+    let user3: SignerWithAddress
+    let user4: SignerWithAddress
 
     beforeEach('deploy contracts', async () => {
+        [wallet, alice, bob, carol, other, user0, user1, user2, user3, user4] = await ethers.getSigners();
         ({ token0, token1, token2, factory, router, hypervisorFactory } = await loadFixture(hypervisorTestFixture))
         await hypervisorFactory.createHypervisor(token0.address, token1.address, FeeAmount.MEDIUM,"Test Visor", "TVR");
         const hypervisorAddress = await hypervisorFactory.getHypervisor(token0.address, token1.address, FeeAmount.MEDIUM)
