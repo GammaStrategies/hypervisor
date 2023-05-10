@@ -18,6 +18,34 @@ import {
   limitTicksFromCurrentTick
 } from './shared/tick'
 
+task('deploy-clearing', 'Deploy UniProxy contract')
+  .setAction(async (cliArgs, { ethers, run, network }) => {
+
+    await run('compile')
+
+    // get signer
+
+    const signer = (await ethers.getSigners())[0]
+    console.log('Signer')
+    console.log('  at', signer.address)
+    console.log('  ETH', formatEther(await signer.getBalance()))
+
+    console.log('Network')
+    console.log('  ', network.name)
+
+    const uniProxyFactory = await ethers.getContractFactory('Clearing')
+
+    const uniProxy = await deployContract(
+      'Clearing',
+      uniProxyFactory,
+      signer
+    )
+
+    await uniProxy.deployTransaction.wait(5)
+    await run('verify:verify', {
+      address: uniProxy.address
+    })
+  })
 task('deploy-swapper', 'Deploy Hypervisor contract')
   .addParam('owner', 'token address')
   .addParam('router', 'token address')
@@ -368,7 +396,6 @@ task('deploy-auto', 'Deploy admin contract')
 
 task('deploy-admin', 'Deploy admin contract')
   .addParam('admin', 'admin account')
-  .addParam('advisor', 'advisor account')
   .setAction(async (args, { ethers, run, network }) => {
     console.log('Network')
     console.log('  ', network.name)
@@ -394,13 +421,13 @@ task('deploy-admin', 'Deploy admin contract')
       'Admin',
       await ethers.getContractFactory('Admin'),
       signer,
-      [args.admin, args.advisor]
+      [args.admin]
     )
 
     await admin.deployTransaction.wait(5)
     await run('verify:verify', {
       address: admin.address,
-      constructorArguments: [args.admin, args.advisor]
+      constructorArguments: [args.admin]
     })
 
 });
@@ -597,9 +624,9 @@ task('deploy-registry', 'Deploy Registry contract')
       address: registry.address
     })
   })
-
 task('deploy-uniproxy', 'Deploy UniProxy contract')
-  .setAction(async (cliArgs, { ethers, run, network }) => {
+  .addParam('clearing', 'the UniProxy to verify')
+  .setAction(async (args, { ethers, run, network }) => {
 
     await run('compile')
 
@@ -618,14 +645,78 @@ task('deploy-uniproxy', 'Deploy UniProxy contract')
     const uniProxy = await deployContract(
       'UniProxy',
       uniProxyFactory,
-      signer
+      signer,
+			[args.clearing]
     )
 
     await uniProxy.deployTransaction.wait(5)
     await run('verify:verify', {
-      address: uniProxy.address
+      address: uniProxy.address,
+			constructorArguments: [args.clearing]
     })
   })
+task('deploy-data', 'Deploy swapper contract')
+  .setAction(async (args, { ethers, run, network }) => {
+    console.log('Network')
+    console.log('  ', network.name)
+    console.log('Task Args')
+    console.log(args)
+
+    // compile
+
+    await run('compile')
+
+    // get signer
+
+    const signer = (await ethers.getSigners())[0]
+    console.log('Signer')
+    console.log('  at', signer.address)
+    console.log('  ETH', formatEther(await signer.getBalance()))
+
+    // deploy contracts
+
+    const chefFactory = await ethers.getContractFactory('Data')
+
+    const chef = await deployContract(
+      'Data',
+      await ethers.getContractFactory('Data'),
+      signer,
+    )
+
+    await chef.deployTransaction.wait(15)
+    await run('verify:verify', {
+      address: chef.address,
+      constructorArguments: []
+    })
+})
+// task('deploy-uniproxy', 'Deploy UniProxy contract')
+//   .setAction(async (cliArgs, { ethers, run, network }) => {
+
+//     await run('compile')
+
+//     // get signer
+
+//     const signer = (await ethers.getSigners())[0]
+//     console.log('Signer')
+//     console.log('  at', signer.address)
+//     console.log('  ETH', formatEther(await signer.getBalance()))
+
+//     console.log('Network')
+//     console.log('  ', network.name)
+
+//     const uniProxyFactory = await ethers.getContractFactory('UniProxy')
+
+//     const uniProxy = await deployContract(
+//       'UniProxy',
+//       uniProxyFactory,
+//       signer
+//     )
+
+//     await uniProxy.deployTransaction.wait(5)
+//     await run('verify:verify', {
+//       address: uniProxy.address
+//     })
+//   })
 task('verify-factory', 'Verify UniProxy contract')
   .addParam('hfactory', 'the UniProxy to verify')
   .addParam('factory', 'the UniProxy to verify')

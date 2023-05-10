@@ -3,7 +3,7 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../algebra/interfaces/IAlgebraPool.sol";
+import "./IAlgebraPoolV2.sol";
 interface IHypervisor {
 
 
@@ -71,7 +71,25 @@ interface IHypervisor {
     uint256 base1
   );
 
-  function pool() external view returns (IAlgebraPool);
+  function pullLiquidity(
+    uint256 shares,
+    uint256[4] memory minAmounts 
+  ) external returns(
+      uint256 base0,
+      uint256 base1,
+      uint256 limit0,
+      uint256 limit1
+  );
+
+  function addLiquidity(
+      int24 tickLower,
+      int24 tickUpper,
+      uint256 amount0,
+      uint256 amount1,
+      uint256[2] memory inMin
+  ) external;
+
+  function pool() external view returns (IAlgebraPoolV2);
 
   function currentTick() external view returns (int24 tick);
   

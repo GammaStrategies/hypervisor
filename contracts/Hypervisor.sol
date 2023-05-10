@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/drafts/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "./algebra/interfaces/callback/IAlgebraMintCallback.sol";
-import "./algebra/interfaces/IAlgebraPool.sol";
+import "./interfaces/IAlgebraPoolV2.sol";
 import "./algebra/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
@@ -24,10 +24,10 @@ contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
-    IAlgebraPool public pool;
+    IAlgebraPoolV2 public pool;
     IERC20 public token0;
     IERC20 public token1;
-    uint8 public fee = 10;
+    uint8 public fee = 7;
     int24 public tickSpacing;
 
     int24 public baseLower;
@@ -86,7 +86,7 @@ contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
     ) ERC20Permit(name) ERC20(name, symbol) {
         require(_pool != address(0));
         require(_owner != address(0));
-        pool = IAlgebraPool(_pool);
+        pool = IAlgebraPoolV2(_pool);
         token0 = IERC20(pool.token0());
         token1 = IERC20(pool.token1());
         require(address(token0) != address(0));
@@ -473,7 +473,9 @@ contract Hypervisor is IAlgebraMintCallback, ERC20Permit, ReentrancyGuard {
       assembly {
         positionKey := or(shl(24, or(shl(24, This), and(tickLower, 0xFFFFFF))), and(tickUpper, 0xFFFFFF))
       }
-        (liquidity, , , , tokensOwed0, tokensOwed1) = pool.positions(positionKey);
+				uint256 liquidityTmp;
+        (liquidityTmp, , ,tokensOwed0, tokensOwed1) = pool.positions(positionKey);
+				liquidity = _uint128Safe(liquidityTmp);
     }
 
     /// @notice Callback function of uniswapV3Pool mint
