@@ -10,24 +10,26 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/drafts/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3MintCallback.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import "./interfaces/callback/IBeamswapV3MintCallback.sol";
+import "./interfaces/IBeamswapV3Pool.sol";
+
+
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
 /// @title Hypervisor v1.3
-/// @notice A Uniswap V2-like interface with fungible liquidity to Uniswap V3
+/// @notice A Beamswap V2-like interface with fungible liquidity to Beamswap
 /// which allows for arbitrary liquidity provision: one-sided, lop-sided, and balanced
-contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
+contract Hypervisor is IBeamswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
-    IUniswapV3Pool public pool;
+    IBeamswapV3Pool public pool;
     IERC20 public token0;
     IERC20 public token1;
-    uint8 public fee = 20;
+    uint8 public fee = 7;
     int24 public tickSpacing;
 
     int24 public baseLower;
@@ -76,7 +78,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     event SetFee(uint8 newFee);
 
 
-    /// @param _pool Uniswap V3 pool for which liquidity is managed
+    /// @param _pool Beamswap V3 pool for which liquidity is managed
     /// @param _owner Owner of the Hypervisor
     constructor(
         address _pool,
@@ -86,7 +88,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     ) ERC20Permit(name) ERC20(name, symbol) {
         require(_pool != address(0));
         require(_owner != address(0));
-        pool = IUniswapV3Pool(_pool);
+        pool = IBeamswapV3Pool(_pool);
         token0 = IERC20(pool.token0());
         token1 = IERC20(pool.token1());
         require(address(token0) != address(0));
@@ -226,7 +228,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
         /// update fees
         zeroBurn();
 
-        /// Withdraw liquidity from Uniswap pool
+        /// Withdraw liquidity from Beamswap pool
         (uint256 base0, uint256 base1) = _burnLiquidity(
             baseLower,
             baseUpper,
@@ -297,7 +299,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
         /// update fees
         zeroBurn();
 
-        /// Withdraw all liquidity and collect all fees from Uniswap pool
+        /// Withdraw all liquidity and collect all fees from Beamswap pool
         (uint128 baseLiquidity, uint256 feesLimit0, uint256 feesLimit1) = _position(baseLower, baseUpper);
         (uint128 limitLiquidity, uint256 feesBase0, uint256 feesBase1) = _position(limitLower, limitUpper);
 
@@ -471,8 +473,8 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
         (liquidity, , , tokensOwed0, tokensOwed1) = pool.positions(positionKey);
     }
 
-    /// @notice Callback function of uniswapV3Pool mint
-    function uniswapV3MintCallback(
+    /// @notice Callback function of BeamswapV3Pool mint
+    function beamswapV3MintCallback(
         uint256 amount0,
         uint256 amount1,
         bytes calldata data
@@ -585,7 +587,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
             );
     }
 
-    /// @return tick Uniswap pool's current price tick
+    /// @return tick Beamswap pool's current price tick
     function currentTick() public view returns (int24 tick) {
         (, tick, , , , , ) = pool.slot0();
     }

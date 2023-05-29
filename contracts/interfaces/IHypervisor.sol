@@ -3,7 +3,7 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import "./IBeamswapV3Pool.sol";
 
 interface IHypervisor {
 
@@ -90,7 +90,7 @@ interface IHypervisor {
   ) external;
 
 
-  function pool() external view returns (IUniswapV3Pool);
+  function pool() external view returns (IBeamswapV3Pool);
 
   function currentTick() external view returns (int24 tick);
   
