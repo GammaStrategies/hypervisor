@@ -22,6 +22,7 @@ contract UniProxy is ReentrancyGuard {
   mapping(address => Position) public positions;
 
   address public owner;
+  address public redstoneOracle;
   bool public freeDeposit = false;
   bool public twapCheck = false;
   uint32 public twapInterval = 1 hours;
@@ -60,8 +61,9 @@ contract UniProxy is ReentrancyGuard {
   event ListAppended(address pos, address[] listed);
   event ListRemoved(address pos, address listed);
 
-  constructor() {
+  constructor(address redstoneOracle_) {
     owner = msg.sender;
+    redstoneOracle = redstoneOracle_;
   }
 
   modifier onlyAddedPosition(address pos) {
@@ -94,7 +96,8 @@ contract UniProxy is ReentrancyGuard {
     uint256 deposit1,
     address to,
     address pos,
-    uint256[4] memory minIn
+    uint256[4] memory minIn,
+    bytes calldata redstonePayload    
   ) nonReentrant external onlyAddedPosition(pos) returns (uint256 shares) {
     require(to != address(0), "to should be non-zero");
     Position storage p = positions[pos];
@@ -131,6 +134,15 @@ contract UniProxy is ReentrancyGuard {
         (p.twapOverride ? p.priceThreshold : priceThreshold)
       );
     }
+
+    //This is an example how to include checking price against Oracle
+    //it could be refactored or moved to another place
+
+    checkPriceAgainstRedstoneOracle(
+      pos,
+      (p.twapOverride ? p.priceThreshold : priceThreshold),
+      redstonePayload
+    );
 
     if (p.depositOverride) {
       if (p.deposit0Max > 0) {
@@ -198,6 +210,21 @@ contract UniProxy is ReentrancyGuard {
     uint256 priceBefore = FullMath.mulDiv(uint256(sqrtPriceBefore).mul(uint256(sqrtPriceBefore)), 1e18, 2**(96 * 2));
     if (price.mul(100).div(priceBefore) > _priceThreshold || priceBefore.mul(100).div(price) > _priceThreshold)
       revert("Price change Overflow");
+  }
+
+  /// @notice Check if the price change overflows or not based on given twap and threshold in the hypervisor
+  /// @param pos Hypervisor Address
+  /// @param _priceThreshold Price Threshold
+  function checkPriceAgainstRedstoneOracle(
+    address pos,
+    uint256 _priceThreshold,
+    bytes calldata redstonePayload
+  ) internal {
+    uint160 sqrtPrice = TickMath.getSqrtRatioAtTick(IHypervisor(pos).currentTick());
+    uint256 price = FullMath.mulDiv(uint256(sqrtPrice).mul(uint256(sqrtPrice)), 1e18, 2**(96 * 2));
+    uint256 oraclePice = getPriceFromRedstoneOracle(redstonePayload); 
+    if (price.mul(100).div(oraclePice) > _priceThreshold || oraclePice.mul(100).div(price) > _priceThreshold)
+     revert("Too large deviation from oracle price");
   }
 
   /// @notice Get the sqrt price before the given interval
@@ -338,5 +365,34 @@ contract UniProxy is ReentrancyGuard {
   modifier onlyOwner {
     require(msg.sender == owner, "only owner");
     _;
+  }
+
+  function getPriceFromRedstoneOracle(bytes calldata redstonePayload) public view returns(uint256) {
+    // Prepare call to RedStone base function
+    bytes memory encodedFunction = abi.encodeWithSignature(
+      "extractPrice()");
+
+    bytes memory encodedFunctionWithRedstonePayload = abi.encodePacked(
+      encodedFunction,
+      redstonePayload
+    );
+
+    // Securely getting oracle value
+    (bool success, bytes memory result) = redstoneOracle.staticcall(
+      encodedFunctionWithRedstonePayload
+    );
+
+    // Parsing response
+    uint256 priceValue;
+    if (!success) {
+      assembly {
+        revert(add(32, result), mload(result))
+      }
+    }
+    assembly {
+      priceValue := mload(add(result, 32))
+    }
+
+    return priceValue;
   }
 }
