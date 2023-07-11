@@ -222,7 +222,7 @@ contract UniProxy is ReentrancyGuard {
   ) internal {
     uint160 sqrtPrice = TickMath.getSqrtRatioAtTick(IHypervisor(pos).currentTick());
     uint256 price = FullMath.mulDiv(uint256(sqrtPrice).mul(uint256(sqrtPrice)), 1e18, 2**(96 * 2));
-    uint256 oraclePice = getPriceFromRedstoneOracle(redstonePayload); 
+    uint256 oraclePice = getPriceFromRedstoneOracle(pos, redstonePayload); 
     if (price.mul(100).div(oraclePice) > _priceThreshold || oraclePice.mul(100).div(price) > _priceThreshold)
      revert("Too large deviation from oracle price");
   }
@@ -367,10 +367,14 @@ contract UniProxy is ReentrancyGuard {
     _;
   }
 
-  function getPriceFromRedstoneOracle(bytes calldata redstonePayload) public view returns(uint256) {
+  function getPriceFromRedstoneOracle(address pos, bytes calldata redstonePayload) public view returns(uint256) {
+    
     // Prepare call to RedStone base function
     bytes memory encodedFunction = abi.encodeWithSignature(
-      "extractPrice()");
+      "extractPrice(address,address)",
+      address(IHypervisor(pos).token0()),
+      address(IHypervisor(pos).token1())
+      );
 
     bytes memory encodedFunctionWithRedstonePayload = abi.encodePacked(
       encodedFunction,

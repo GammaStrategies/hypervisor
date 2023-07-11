@@ -9,6 +9,9 @@ import { SimpleNumericMockWrapper } from "@redstone-finance/evm-connector/dist/s
 
 const MOCKING_PRECISION = Math.pow(10,10);
 
+const USDC_POLYGON = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+const DAI_POLYGON = "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063";
+
 chai.use(solidity)
 
 import {
@@ -77,14 +80,25 @@ describe('Hypervisor', () => {
               mockSignersCount: 10,
               dataPoints: [
               { dataFeedId: "LP", value: 1 * MOCKING_PRECISION },
+              { dataFeedId: "usdc.dai", value: 1.1 * MOCKING_PRECISION }
               ],
           });
     
-          let price = await wrappedContract.extractPrice();
-          console.log("Price directly from oracle: " + price.toString());
+          let mockPrice = await wrappedContract.extractPrice(
+            token0.address,
+            token1.address
+          );
+
+          let usdcDaiPrice = await wrappedContract.extractPrice(
+            USDC_POLYGON,
+            DAI_POLYGON
+          );
+
+          console.log("Price directly from oracle based on mock tokens: " + mockPrice.toString());
+          console.log("Price directly from oracle based on usdc & dai: " + usdcDaiPrice.toString());
       });
   
-      it("Should get the price from Redstone Oracles via UnniProxy", async function () {
+      it("Should get the price from Redstone Oracles via UniProxy", async function () {
         const Oracle = await ethers.getContractFactory("RedstoneOracle");
         const oracle = await Oracle.deploy();
         await oracle.deployed();
@@ -101,7 +115,7 @@ describe('Hypervisor', () => {
             ],
           }).getBytesDataForAppending());  
     
-        let price = await uniProxy.getPriceFromRedstoneOracle(`0x${redstonePayload}`);
+        let price = await uniProxy.getPriceFromRedstoneOracle(hypervisor.address, `0x${redstonePayload}`);
         console.log("Price via Uni Proxy: " + price.toString());
     });
 
