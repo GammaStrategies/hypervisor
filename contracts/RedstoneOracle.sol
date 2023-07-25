@@ -3,23 +3,21 @@
 pragma solidity 0.8.4;
 
 import "@redstone-finance/evm-connector/contracts/mocks/RedstoneConsumerNumericMock.sol";
+import {Ownable} from '@openzeppelin8/contracts/access/Ownable.sol';
 
-contract RedstoneOracle is RedstoneConsumerNumericMock {
+contract RedstoneOracle is RedstoneConsumerNumericMock, Ownable {
+
+    mapping (bytes32 => bytes32) priceFeedIdMapping;
 
     function extractPrice(address token0, address token1) public view returns(uint256) {
-        bytes32 priceFeedId = getPriceFeedId(token0, token1);
+        bytes32 hash = keccak256(abi.encodePacked(token0, token1));
+        bytes32 priceFeedId = priceFeedIdMapping[hash];
         return getOracleNumericValueFromTxMsg(priceFeedId);
     }
 
-    //It's best to hardcode addresses in this function instead of mappings
-    //to reduce the costs of storage access
-    function getPriceFeedId(address token0, address token1) public view returns(bytes32) {
-        if ( token0 == 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
-          && token1 == 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063) {
-            return bytes32("usdc.dai"); 
-        } else {
-            //For testing purpose when the addresses of tokens are generated dynamically 
-            return bytes32("LP");
-        }
+    //TODO: Add access control logic to limit who can update priceFeedId
+    function setPriceFeedId(address token0, address token1, bytes32 feedId) external onlyOwner {
+        bytes32 hash = keccak256(abi.encodePacked(token0, token1));
+        priceFeedIdMapping[hash] = feedId;
     }
 }
