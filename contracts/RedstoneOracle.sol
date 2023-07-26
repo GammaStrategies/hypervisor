@@ -19,4 +19,8 @@ contract RedstoneOracle is RedstoneConsumerNumericMock, Ownable {
         bytes32 hash = keccak256(abi.encodePacked(token0, token1));
         priceFeedIdMapping[hash] = feedId;
     }
+
+    function isPriceFeedAvailable(address token0, address token1) external view returns(bool) {
+        return priceFeedIdMapping[keccak256(abi.encodePacked(token0, token1))] != bytes32(0);
+    } 
 }

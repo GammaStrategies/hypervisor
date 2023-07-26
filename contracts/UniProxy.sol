@@ -138,12 +138,16 @@ contract UniProxy is ReentrancyGuard {
 
     //This is an example how to include checking price against Oracle
     //it could be refactored or moved to another place
-
-    checkPriceAgainstRedstoneOracle(
-      pos,
-      (p.twapOverride ? p.priceThreshold : priceThreshold),
-      redstonePayload
-    );
+    if (redstoneOracle.isPriceFeedAvailable(
+          address(IHypervisor(pos).token0()),
+          address(IHypervisor(pos).token1())
+       )) {
+      checkPriceAgainstRedstoneOracle(
+        pos,
+        (p.twapOverride ? p.priceThreshold : priceThreshold),
+        redstonePayload
+      );
+    }
 
     if (p.depositOverride) {
       if (p.deposit0Max > 0) {
