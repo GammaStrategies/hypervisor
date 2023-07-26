@@ -14,7 +14,7 @@
     "@ethersproject/abstract-signer": "^5.3.0",
     "@openzeppelin/contracts": "^3.4.1-solc-0.7-2",
     "@openzeppelin8/contracts": "npm:@openzeppelin/contracts",
-    "@redstone-finance/evm-connector": "^0.2.1",
+    "@redstone-finance/evm-connector": "^0.2.3",
     "@uniswap/v3-core": "*",
     "@uniswap/v3-periphery": "*",
     "bignumber.js": "^9.0.1",    

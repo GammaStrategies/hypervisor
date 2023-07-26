@@ -28,7 +28,8 @@ import {
     IUniswapV3Pool,
     HypervisorFactory,
     Hypervisor,
-    TestERC20
+    TestERC20,
+    RedstoneOracle
 } from "../typechain"
 
 const createFixtureLoader = waffle.createFixtureLoader
@@ -44,6 +45,7 @@ describe('Hypervisor', () => {
     let uniswapPool: IUniswapV3Pool
     let hypervisorFactory: HypervisorFactory
     let hypervisor: Hypervisor
+    let oracle: RedstoneOracle;
 
 
     let loadFixture: ReturnType<typeof createFixtureLoader>
@@ -68,62 +70,66 @@ describe('Hypervisor', () => {
 
         await token0.mint(uniswapPool.address, ethers.utils.parseEther('1000000'))
         await token1.mint(uniswapPool.address, ethers.utils.parseEther('1000000'))
+
+        const Oracle = await ethers.getContractFactory("RedstoneOracle");
+        oracle = await Oracle.deploy() as RedstoneOracle;
+        await oracle.deployed();
+
+        await oracle.setPriceFeedId(
+          token0.address,
+          token1.address,
+          ethers.utils.formatBytes32String("LP")
+        );
+
+        await oracle.setPriceFeedId(
+          USDC_POLYGON,
+          DAI_POLYGON,
+          ethers.utils.formatBytes32String("usdc.dai")
+        );
     })
 
     it("Should get the price directly from Oracle contract", async function () {
-        const Oracle = await ethers.getContractFactory("RedstoneOracle");
-        const oracle = await Oracle.deploy();
-        await oracle.deployed();
-    
-          const wrappedContract =
-          WrapperBuilder.wrap(oracle).usingSimpleNumericMock({
-              mockSignersCount: 10,
-              dataPoints: [
-              { dataFeedId: "LP", value: 1 * MOCKING_PRECISION },
-              { dataFeedId: "usdc.dai", value: 1.1 * MOCKING_PRECISION }
-              ],
-          });
-    
-          let mockPrice = await wrappedContract.extractPrice(
-            token0.address,
-            token1.address
-          );
+        const redstonePayload = await (new SimpleNumericMockWrapper({
+          mockSignersCount: 10,
+          dataPoints: [
+            { dataFeedId: "LP", value: 1 * MOCKING_PRECISION },
+            { dataFeedId: "usdc.dai", value: 1.1 * MOCKING_PRECISION }
+          ],
+        }).getRedstonePayloadForManualUsage(oracle)); 
+  
+        let mockPrice = await oracle.extractPrice(
+          token0.address,
+          token1.address,
+          redstonePayload
+        );
 
-          let usdcDaiPrice = await wrappedContract.extractPrice(
-            USDC_POLYGON,
-            DAI_POLYGON
-          );
+        let usdcDaiPrice = await oracle.extractPrice(
+          USDC_POLYGON,
+          DAI_POLYGON,
+          redstonePayload
+        );
 
-          console.log("Price directly from oracle based on mock tokens: " + mockPrice.toString());
-          console.log("Price directly from oracle based on usdc & dai: " + usdcDaiPrice.toString());
+        console.log("Price directly from oracle based on mock tokens: " + mockPrice.toString());
+        console.log("Price directly from oracle based on usdc & dai: " + usdcDaiPrice.toString());
       });
   
       it("Should get the price from Redstone Oracles via UniProxy", async function () {
-        const Oracle = await ethers.getContractFactory("RedstoneOracle");
-        const oracle = await Oracle.deploy();
-        await oracle.deployed();
-
         const UniProxy = await ethers.getContractFactory("UniProxy");
         const uniProxy = await UniProxy.deploy(oracle.address);
-        await uniProxy.deployed();
-  
+        await uniProxy.deployed();  
         
         const redstonePayload = await (new SimpleNumericMockWrapper({
             mockSignersCount: 10,
             dataPoints: [
               {dataFeedId: "LP", value: 1 * MOCKING_PRECISION}
             ],
-          }).getBytesDataForAppending());  
+        }).getRedstonePayloadForManualUsage(uniProxy));  
     
-        let price = await uniProxy.getPriceFromRedstoneOracle(hypervisor.address, `0x${redstonePayload}`);
+        let price = await uniProxy.getPriceFromRedstoneOracle(hypervisor.address, redstonePayload);
         console.log("Price via Uni Proxy: " + price.toString());
     });
 
     it("Should successfully deposit", async function () {
-        const Oracle = await ethers.getContractFactory("RedstoneOracle");
-        const oracle = await Oracle.deploy();
-        await oracle.deployed();
-
         const UniProxy = await ethers.getContractFactory("UniProxy");
         const uniProxy = await UniProxy.deploy(oracle.address);
         await uniProxy.deployed();
@@ -145,11 +151,11 @@ describe('Hypervisor', () => {
 
         //Prepare payload with prices
         const redstonePayload = await (new SimpleNumericMockWrapper({
-            mockSignersCount: 10,
-            dataPoints: [
-              {dataFeedId: "LP", value: 1.009 * MOCKING_PRECISION}
-            ],
-          }).getBytesDataForAppending()); 
+          mockSignersCount: 10,
+          dataPoints: [
+            {dataFeedId: "LP", value: 1 * MOCKING_PRECISION}
+          ],
+      }).getRedstonePayloadForManualUsage(uniProxy));
 
         //Deposit
         await uniProxy.connect(alice).deposit(
@@ -158,15 +164,11 @@ describe('Hypervisor', () => {
             alice.address,
             hypervisor.address,
             [0,0,0,0],
-            `0x${redstonePayload}`
+            redstonePayload
         );
     });
 
     it("Should revert when the price deviates too much from Oracle", async function () {
-        const Oracle = await ethers.getContractFactory("RedstoneOracle");
-        const oracle = await Oracle.deploy();
-        await oracle.deployed();
-
         const UniProxy = await ethers.getContractFactory("UniProxy");
         const uniProxy = await UniProxy.deploy(oracle.address);
         await uniProxy.deployed();
@@ -188,11 +190,11 @@ describe('Hypervisor', () => {
 
         //Prepare payload with prices
         const redstonePayload = await (new SimpleNumericMockWrapper({
-            mockSignersCount: 10,
-            dataPoints: [
-              {dataFeedId: "LP", value: 1.01 * MOCKING_PRECISION}
-            ],
-          }).getBytesDataForAppending()); 
+          mockSignersCount: 10,
+          dataPoints: [
+            {dataFeedId: "LP", value: 1.01 * MOCKING_PRECISION}
+          ],
+      }).getRedstonePayloadForManualUsage(uniProxy));
 
         //Deposit
         await expect(uniProxy.connect(alice).deposit(
@@ -201,7 +203,7 @@ describe('Hypervisor', () => {
             alice.address,
             hypervisor.address,
             [0,0,0,0],
-            `0x${redstonePayload}`
+            redstonePayload
         )).to.be.revertedWith("Too large deviation from oracle price");
     });   
 

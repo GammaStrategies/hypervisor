@@ -4,6 +4,7 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "./interfaces/IHypervisor.sol";
+import "./interfaces/IRedstoneOracle.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
@@ -22,7 +23,7 @@ contract UniProxy is ReentrancyGuard {
   mapping(address => Position) public positions;
 
   address public owner;
-  address public redstoneOracle;
+  IRedstoneOracle public redstoneOracle;
   bool public freeDeposit = false;
   bool public twapCheck = false;
   uint32 public twapInterval = 1 hours;
@@ -61,7 +62,7 @@ contract UniProxy is ReentrancyGuard {
   event ListAppended(address pos, address[] listed);
   event ListRemoved(address pos, address listed);
 
-  constructor(address redstoneOracle_) {
+  constructor(IRedstoneOracle redstoneOracle_) {
     owner = msg.sender;
     redstoneOracle = redstoneOracle_;
   }
@@ -368,35 +369,10 @@ contract UniProxy is ReentrancyGuard {
   }
 
   function getPriceFromRedstoneOracle(address pos, bytes calldata redstonePayload) public view returns(uint256) {
-    
-    // Prepare call to RedStone base function
-    bytes memory encodedFunction = abi.encodeWithSignature(
-      "extractPrice(address,address)",
+    return redstoneOracle.extractPrice(
       address(IHypervisor(pos).token0()),
-      address(IHypervisor(pos).token1())
-      );
-
-    bytes memory encodedFunctionWithRedstonePayload = abi.encodePacked(
-      encodedFunction,
+      address(IHypervisor(pos).token1()),
       redstonePayload
     );
-
-    // Securely getting oracle value
-    (bool success, bytes memory result) = redstoneOracle.staticcall(
-      encodedFunctionWithRedstonePayload
-    );
-
-    // Parsing response
-    uint256 priceValue;
-    if (!success) {
-      assembly {
-        revert(add(32, result), mload(result))
-      }
-    }
-    assembly {
-      priceValue := mload(add(result, 32))
-    }
-
-    return priceValue;
   }
 }
