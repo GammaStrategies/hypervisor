@@ -1,0 +1,39 @@
+diff --git a/node_modules/@redstone-finance/evm-connector/contracts/core/CalldataExtractor.sol b/node_modules/@redstone-finance/evm-connector/contracts/core/CalldataExtractor.sol
+index d1c5f7a..9b2b5f5 100644
+--- a/node_modules/@redstone-finance/evm-connector/contracts/core/CalldataExtractor.sol
++++ b/node_modules/@redstone-finance/evm-connector/contracts/core/CalldataExtractor.sol
+@@ -2,7 +2,7 @@
+ 
+ pragma solidity ^0.8.4;
+ 
+-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
++import "../../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
+ 
+ import "./RedstoneConstants.sol";
+ 
+diff --git a/node_modules/@redstone-finance/evm-connector/contracts/core/RedstoneConsumerBase.sol b/node_modules/@redstone-finance/evm-connector/contracts/core/RedstoneConsumerBase.sol
+index b15630a..f4fad60 100644
+--- a/node_modules/@redstone-finance/evm-connector/contracts/core/RedstoneConsumerBase.sol
++++ b/node_modules/@redstone-finance/evm-connector/contracts/core/RedstoneConsumerBase.sol
+@@ -2,7 +2,7 @@
+ 
+ pragma solidity ^0.8.4;
+ 
+-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
++import "../../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
+ 
+ import "./RedstoneConstants.sol";
+ import "./RedstoneDefaultsLib.sol";
+diff --git a/node_modules/@redstone-finance/evm-connector/contracts/libs/NumericArrayLib.sol b/node_modules/@redstone-finance/evm-connector/contracts/libs/NumericArrayLib.sol
+index 25ccdf0..1b1fe96 100644
+--- a/node_modules/@redstone-finance/evm-connector/contracts/libs/NumericArrayLib.sol
++++ b/node_modules/@redstone-finance/evm-connector/contracts/libs/NumericArrayLib.sol
+@@ -2,7 +2,7 @@
+ 
+ pragma solidity ^0.8.4;
+ 
+-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
++import "../../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
+ 
+ library NumericArrayLib {
+   // This function sort array in memory using bubble sort algorithm,

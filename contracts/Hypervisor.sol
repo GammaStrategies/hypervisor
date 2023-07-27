@@ -27,7 +27,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     IUniswapV3Pool public pool;
     IERC20 public token0;
     IERC20 public token1;
-    uint8 public fee = 20;
+    uint8 public fee = 7;
     int24 public tickSpacing;
 
     int24 public baseLower;
@@ -122,7 +122,7 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
         /// update fees
         zeroBurn();
 
-        uint160 sqrtPrice = TickMath.getSqrtRatioAtTick(currentTick());
+        (uint160 sqrtPrice, , , , , , ) = pool.slot0();
         uint256 price = FullMath.mulDiv(uint256(sqrtPrice).mul(uint256(sqrtPrice)), PRECISION, 2**(96 * 2));
 
         (uint256 pool0, uint256 pool1) = getTotalAmounts();

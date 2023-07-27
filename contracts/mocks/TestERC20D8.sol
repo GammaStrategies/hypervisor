@@ -3,7 +3,7 @@ pragma solidity =0.7.6;
 
 import {IERC20Minimal} from '@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol';
 
-contract TestERC20 is IERC20Minimal {
+contract TestERC20D8 is IERC20Minimal {
     mapping(address => uint256) public override balanceOf;
     mapping(address => mapping(address => uint256)) public override allowance;
 
@@ -12,7 +12,7 @@ contract TestERC20 is IERC20Minimal {
     }
 
     function decimals() public pure returns (uint8) {
-        return 18;
+        return 8;
     }
 
     function mint(address to, uint256 amount) public {

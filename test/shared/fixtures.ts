@@ -9,6 +9,14 @@ import {
     MockUniswapV3PoolDeployer,
     TokeHypervisorFactory
 } from "../../typechain";
+import {
+    abi as FACTORY_ABI,
+    bytecode as FACTORY_BYTECODE,
+} from '@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json';
+import {
+    abi as SWAP_ROUTER_ABI,
+    bytecode as SWAP_ROUTER_BYTECODE,
+} from '@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json';
 
 import { Fixture } from 'ethereum-waffle'
 
@@ -18,13 +26,13 @@ interface UniswapV3Fixture {
 }
 
 async function uniswapV3Fixture(): Promise<UniswapV3Fixture> {
-    const factoryFactory = await ethers.getContractFactory('UniswapV3Factory')
+    const factoryFactory = await ethers.getContractFactory(FACTORY_ABI, FACTORY_BYTECODE)
     const factory = (await factoryFactory.deploy()) as IUniswapV3Factory
 
     const tokenFactory = await ethers.getContractFactory('TestERC20')
     const WETH = (await tokenFactory.deploy(BigNumber.from(2).pow(255))) as TestERC20 // TODO: change to real WETH
 
-    const routerFactory = await ethers.getContractFactory('SwapRouter')
+    const routerFactory = await ethers.getContractFactory(SWAP_ROUTER_ABI, SWAP_ROUTER_BYTECODE)
     const router = (await routerFactory.deploy(factory.address, WETH.address)) as ISwapRouter
     return { factory, router }
 }

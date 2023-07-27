@@ -134,4 +134,6 @@ interface IHypervisor {
 
   function transferOwnership(address newOwner) external;
 
+  function toggleDirectDeposit() external;
+
 }
