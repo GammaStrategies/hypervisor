@@ -92,4 +92,12 @@ contract UniProxy is ReentrancyGuard {
     require(msg.sender == owner, "only owner");
     _;
   }
+
+  function getPriceFromRedstoneOracle(address pos, bytes calldata redstonePayload) public view returns(uint256) {
+    return redstoneOracle.extractPrice(
+      address(IHypervisor(pos).token0()),
+      address(IHypervisor(pos).token1()),
+      redstonePayload
+    );
+  }
 }
