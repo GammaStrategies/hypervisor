@@ -11,7 +11,7 @@ contract RedstoneOracle is RedstoneConsumerNumericMock, Ownable {
     /**
      * @dev get price from redstone oracle
      */
-    function extractPrice(address token0, address token1) public view returns(uint256) {
+    function extractPrice(address token0, address token1, bytes calldata redstonePayload) external view returns(uint256) {
         bytes32 hash = keccak256(abi.encode(token0, token1));
         bytes32 priceFeedId = priceFeedIdMapping[hash];
         return getOracleNumericValueFromTxMsg(priceFeedId);

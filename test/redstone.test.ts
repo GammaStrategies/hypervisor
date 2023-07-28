@@ -90,15 +90,14 @@ describe('Hypervisor', () => {
         await oracle.deployed();
         await oracle.connect(wallet).setPriceFeedId(token0.address, token1.address, "usdc.dai");
     
-        const wrappedContract =
-          WrapperBuilder.wrap(oracle).usingSimpleNumericMock({
-              mockSignersCount: 10,
-              dataPoints: [
-              { dataFeedId: "usdc.dai", value: 1 * MOCKING_PRECISION },
-              ],
-          });
+        const redstonePayload = await (new SimpleNumericMockWrapper({
+          mockSignersCount: 10,
+          dataPoints: [
+            {dataFeedId: "usdc.dai", value: 1 * MOCKING_PRECISION}
+          ],
+        }).getRedstonePayloadForManualUsage(oracle));
   
-        let price = await wrappedContract.extractPrice(token0.address, token1.address);
+        let price = await oracle.extractPrice(token0.address, token1.address, redstonePayload);
         console.log("Price directly from oracle: " + price.toString());
     });
   
@@ -118,9 +117,9 @@ describe('Hypervisor', () => {
             dataPoints: [
               {dataFeedId: "usdc.dai", value: 1 * MOCKING_PRECISION}
             ],
-          }).getBytesDataForAppending());  
+          }).getRedstonePayloadForManualUsage(clearing));  
     
-        let price = await clearing.getPriceFromRedstoneOracle(hypervisor.address, `0x${redstonePayload}`);
+        let price = await clearing.getPriceFromRedstoneOracle(hypervisor.address, redstonePayload);
         console.log("Price via Clearing: " + price.toString());
     });
 
@@ -160,7 +159,7 @@ describe('Hypervisor', () => {
             dataPoints: [
               {dataFeedId: "usdc.dai", value: 1.006 * MOCKING_PRECISION}
             ],
-          }).getBytesDataForAppending()); 
+          }).getRedstonePayloadForManualUsage(uniProxy));
 
         //Deposit
         await uniProxy.connect(alice).deposit(
@@ -169,7 +168,7 @@ describe('Hypervisor', () => {
             alice.address,
             hypervisor.address,
             [0,0,0,0],
-            `0x${redstonePayload}`
+            redstonePayload
         );
     });
 
@@ -209,7 +208,7 @@ describe('Hypervisor', () => {
           dataPoints: [
             {dataFeedId: "eth.usdc", value: 1.006 * MOCKING_PRECISION}
           ],
-        }).getBytesDataForAppending()); 
+        }).getRedstonePayloadForManualUsage(uniProxy)); 
 
       //Deposit
       await uniProxy.connect(alice).deposit(
@@ -218,7 +217,7 @@ describe('Hypervisor', () => {
         alice.address,
         hypervisor02.address,
         [0,0,0,0],
-        `0x${redstonePayload}`
+        redstonePayload
       )
   });
 
@@ -258,7 +257,7 @@ describe('Hypervisor', () => {
         dataPoints: [
           {dataFeedId: "usdc.dai", value: 1.1 * MOCKING_PRECISION}
         ],
-      }).getBytesDataForAppending()); 
+      }).getRedstonePayloadForManualUsage(uniProxy));
 
     //Deposit
     await expect(uniProxy.connect(alice).deposit(
@@ -267,7 +266,7 @@ describe('Hypervisor', () => {
         alice.address,
         hypervisor.address,
         [0,0,0,0],
-        `0x${redstonePayload}`
+        redstonePayload
     )).to.be.revertedWith("Too large deviation from oracle price");
   });   
 

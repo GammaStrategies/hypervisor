@@ -3,6 +3,7 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "./interfaces/IHypervisor.sol";
+import "./interfaces/IRedstoneOracle.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
@@ -26,7 +27,7 @@ contract Clearing is ReentrancyGuard {
   address public owner;
   mapping(address => Position) public positions;
 
-  address public redstoneOracle;
+  IRedstoneOracle public redstoneOracle;
   uint32 public twapInterval = 120;
   uint256 public depositDelta = 1003;
   uint256 public deltaScale = 1000; /// must be a power of 10
@@ -72,7 +73,7 @@ contract Clearing is ReentrancyGuard {
   event CustomRatio(address pos, uint256 fauxTotal0, uint256 fauxTotal1);
   event RatioRemoved(address pos);
 
-  constructor(address redstoneOracle_) {
+  constructor(IRedstoneOracle redstoneOracle_) {
     owner = msg.sender;
     redstoneOracle = redstoneOracle_;
   }
@@ -443,35 +444,11 @@ contract Clearing is ReentrancyGuard {
   /// @param pos Hypervisor address
   /// @param redstonePayload payload of redstone price data
   function getPriceFromRedstoneOracle(address pos, bytes calldata redstonePayload) public view returns(uint256) {
-    // Prepare call to RedStone base function
-    bytes memory encodedFunction = abi.encodeWithSignature(
-      "extractPrice(address,address)",
+    return redstoneOracle.extractPrice(
       address(IHypervisor(pos).token0()),
-      address(IHypervisor(pos).token1())
-    );
-
-    bytes memory encodedFunctionWithRedstonePayload = abi.encodePacked(
-      encodedFunction,
+      address(IHypervisor(pos).token1()),
       redstonePayload
-    );
-
-    // Securely getting oracle value
-    (bool success, bytes memory result) = redstoneOracle.staticcall(
-      encodedFunctionWithRedstonePayload
-    );
-
-    // Parsing response
-    uint256 priceValue;
-    if (!success) {
-      assembly {
-        revert(add(32, result), mload(result))
-      }
-    }
-    assembly {
-      priceValue := mload(add(result, 32))
-    }
-
-    return priceValue;
+    );    
   }
 
 }
