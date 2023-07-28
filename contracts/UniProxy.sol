@@ -3,6 +3,7 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
+import "./interfaces/IRedstoneOracle.sol";
 import "./interfaces/IHypervisor.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
@@ -38,7 +39,7 @@ contract UniProxy is ReentrancyGuard {
 
   constructor(address _clearance) {
     owner = msg.sender;
-		clearance = IClearing(_clearance);	
+		clearance = IClearing(_clearance);
   }
 
   /// @notice Deposit into the given position
@@ -93,11 +94,4 @@ contract UniProxy is ReentrancyGuard {
     _;
   }
 
-  function getPriceFromRedstoneOracle(address pos, bytes calldata redstonePayload) public view returns(uint256) {
-    return redstoneOracle.extractPrice(
-      address(IHypervisor(pos).token0()),
-      address(IHypervisor(pos).token1()),
-      redstonePayload
-    );
-  }
 }
