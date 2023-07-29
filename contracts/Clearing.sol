@@ -258,7 +258,7 @@ contract Clearing is ReentrancyGuard {
       decimalsMuliplier = 10**(token1Decimals - token0Decimals);
       price = FullMath.mulDiv(uint256(sqrtPrice).mul(uint256(sqrtPrice)).div(decimalsMuliplier), PRECISION, 2**(96 * 2));
     }
-    uint256 oraclePrice = getPriceFromRedstoneOracle(pos, redstonePayload).mul(1e18);
+    uint256 oraclePrice = getPriceFromRedstoneOracle(pos, redstonePayload).mul(1e28);
     uint256 _oraclePriceThreshold = positions[pos].oraclePriceThreshold != 0 ? positions[pos].oraclePriceThreshold : oraclePriceThreshold;
     if (price.mul(1000).div(oraclePrice) > _oraclePriceThreshold || oraclePrice.mul(1000).div(price) > _oraclePriceThreshold)
      revert("Too large deviation from oracle price");

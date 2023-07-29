@@ -7,8 +7,6 @@ import { solidity } from "ethereum-waffle"
 import { WrapperBuilder } from "@redstone-finance/evm-connector";
 import { SimpleNumericMockWrapper } from "@redstone-finance/evm-connector/dist/src/wrappers/SimpleMockNumericWrapper";
 
-const MOCKING_PRECISION = Math.pow(10,10);
-
 chai.use(solidity)
 
 import {
@@ -85,7 +83,7 @@ describe('Hypervisor', () => {
     })
 
     it("Should get the price directly from Oracle contract", async function () {
-        const Oracle = await ethers.getContractFactory("RedstoneOracle");
+        const Oracle = await ethers.getContractFactory("RedstoneOracleMock");
         const oracle = await Oracle.deploy();
         await oracle.deployed();
         await oracle.connect(wallet).setPriceFeedId(token0.address, token1.address, "usdc.dai");
@@ -93,7 +91,7 @@ describe('Hypervisor', () => {
         const redstonePayload = await (new SimpleNumericMockWrapper({
           mockSignersCount: 10,
           dataPoints: [
-            {dataFeedId: "usdc.dai", value: 1 * MOCKING_PRECISION}
+            {dataFeedId: "usdc.dai", value: 1.0}
           ],
         }).getRedstonePayloadForManualUsage(oracle));
   
@@ -102,7 +100,7 @@ describe('Hypervisor', () => {
     });
   
     it("Should get the price from Redstone Oracles via Clearing", async function () {
-        const Oracle = await ethers.getContractFactory("RedstoneOracle");
+        const Oracle = await ethers.getContractFactory("RedstoneOracleMock");
         const oracle = await Oracle.deploy();
         await oracle.deployed();
         await oracle.connect(wallet).setPriceFeedId(token0.address, token1.address, "usdc.dai");
@@ -115,7 +113,7 @@ describe('Hypervisor', () => {
         const redstonePayload = await (new SimpleNumericMockWrapper({
             mockSignersCount: 10,
             dataPoints: [
-              {dataFeedId: "usdc.dai", value: 1 * MOCKING_PRECISION}
+              {dataFeedId: "usdc.dai", value: 1.0}
             ],
           }).getRedstonePayloadForManualUsage(clearing));  
     
@@ -124,7 +122,7 @@ describe('Hypervisor', () => {
     });
 
     it("Should successfully deposit", async function () {
-        const Oracle = await ethers.getContractFactory("RedstoneOracle");
+        const Oracle = await ethers.getContractFactory("RedstoneOracleMock");
         const oracle = await Oracle.deploy();
         await oracle.deployed();
         await oracle.connect(wallet).setPriceFeedId(token0.address, token1.address, "usdc.dai");
@@ -157,7 +155,7 @@ describe('Hypervisor', () => {
         const redstonePayload = await (new SimpleNumericMockWrapper({
             mockSignersCount: 10,
             dataPoints: [
-              {dataFeedId: "usdc.dai", value: 1.006 * MOCKING_PRECISION}
+              {dataFeedId: "usdc.dai", value: 1.006}
             ],
           }).getRedstonePayloadForManualUsage(uniProxy));
 
@@ -173,7 +171,7 @@ describe('Hypervisor', () => {
     });
 
     it("Should successfully deposit in case of different decimals", async function () {
-      const Oracle = await ethers.getContractFactory("RedstoneOracle");
+      const Oracle = await ethers.getContractFactory("RedstoneOracleMock");
       const oracle = await Oracle.deploy();
       await oracle.deployed();
       await oracle.connect(wallet).setPriceFeedId(token0.address, tokenD8.address, "eth.usdc");
@@ -206,7 +204,7 @@ describe('Hypervisor', () => {
       const redstonePayload = await (new SimpleNumericMockWrapper({
           mockSignersCount: 10,
           dataPoints: [
-            {dataFeedId: "eth.usdc", value: 1.006 * MOCKING_PRECISION}
+            {dataFeedId: "eth.usdc", value: 1.006}
           ],
         }).getRedstonePayloadForManualUsage(uniProxy)); 
 
@@ -222,7 +220,7 @@ describe('Hypervisor', () => {
   });
 
   it("Should revert when the price deviates too much from Oracle", async function () {
-    const Oracle = await ethers.getContractFactory("RedstoneOracle");
+    const Oracle = await ethers.getContractFactory("RedstoneOracleMock");
     const oracle = await Oracle.deploy();
     await oracle.deployed();
     await oracle.connect(wallet).setPriceFeedId(token0.address, token1.address, "usdc.dai");
@@ -255,9 +253,12 @@ describe('Hypervisor', () => {
     const redstonePayload = await (new SimpleNumericMockWrapper({
         mockSignersCount: 10,
         dataPoints: [
-          {dataFeedId: "usdc.dai", value: 1.1 * MOCKING_PRECISION}
+          {dataFeedId: "usdc.dai", value: 1.1}
         ],
       }).getRedstonePayloadForManualUsage(uniProxy));
+
+    const answer = await clearing.softCheck(hypervisor.address, redstonePayload);
+    console.log(answer.toString());  
 
     //Deposit
     await expect(uniProxy.connect(alice).deposit(
@@ -271,4 +272,5 @@ describe('Hypervisor', () => {
   });   
 
 })
+
 
