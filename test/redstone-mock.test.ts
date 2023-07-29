@@ -1,10 +1,9 @@
 import { ethers, waffle } from 'hardhat'
-import { BigNumber, BigNumberish, constants, Contract } from 'ethers'
+import { BigNumber } from 'ethers'
 import chai from 'chai'
 import { expect } from 'chai'
-import { fixture, hypervisorTestFixture } from "./shared/fixtures"
+import { hypervisorTestFixture } from "./shared/fixtures"
 import { solidity } from "ethereum-waffle"
-import { WrapperBuilder } from "@redstone-finance/evm-connector";
 import { SimpleNumericMockWrapper } from "@redstone-finance/evm-connector/dist/src/wrappers/SimpleMockNumericWrapper";
 
 chai.use(solidity)
@@ -256,9 +255,6 @@ describe('Hypervisor', () => {
           {dataFeedId: "usdc.dai", value: 1.1}
         ],
       }).getRedstonePayloadForManualUsage(uniProxy));
-
-    const answer = await clearing.softCheck(hypervisor.address, redstonePayload);
-    console.log(answer.toString());  
 
     //Deposit
     await expect(uniProxy.connect(alice).deposit(

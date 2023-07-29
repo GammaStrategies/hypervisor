@@ -1,13 +1,8 @@
 import { ethers, waffle } from 'hardhat'
-import { BigNumber, BigNumberish, constants, Contract } from 'ethers'
+import { BigNumber} from 'ethers'
 import chai from 'chai'
-import { expect } from 'chai'
-import { fixture, hypervisorTestFixture } from "./shared/fixtures"
+import { hypervisorTestFixture } from "./shared/fixtures"
 import { solidity } from "ethereum-waffle"
-import { WrapperBuilder } from "@redstone-finance/evm-connector";
-import { SimpleNumericMockWrapper } from "@redstone-finance/evm-connector/dist/src/wrappers/SimpleMockNumericWrapper";
-
-const MOCKING_PRECISION = Math.pow(10,10);
 
 chai.use(solidity)
 
