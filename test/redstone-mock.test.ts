@@ -6,7 +6,9 @@ import { hypervisorTestFixture } from "./shared/fixtures"
 import { solidity } from "ethereum-waffle"
 import { SimpleNumericMockWrapper } from "@redstone-finance/evm-connector/dist/src/wrappers/SimpleMockNumericWrapper";
 
-chai.use(solidity)
+chai.use(solidity);
+
+const EXTRA_PRECISION = Math.pow(10,6);
 
 import {
     FeeAmount,
@@ -90,7 +92,7 @@ describe('Hypervisor', () => {
         const redstonePayload = await (new SimpleNumericMockWrapper({
           mockSignersCount: 10,
           dataPoints: [
-            {dataFeedId: "usdc.dai", value: 1.0}
+            {dataFeedId: "usdc.dai", value: 1.0 * EXTRA_PRECISION}
           ],
         }).getRedstonePayloadForManualUsage(oracle));
   
@@ -112,7 +114,7 @@ describe('Hypervisor', () => {
         const redstonePayload = await (new SimpleNumericMockWrapper({
             mockSignersCount: 10,
             dataPoints: [
-              {dataFeedId: "usdc.dai", value: 1.0}
+              {dataFeedId: "usdc.dai", value: 1.0 * EXTRA_PRECISION}
             ],
           }).getRedstonePayloadForManualUsage(clearing));  
     
@@ -154,7 +156,7 @@ describe('Hypervisor', () => {
         const redstonePayload = await (new SimpleNumericMockWrapper({
             mockSignersCount: 10,
             dataPoints: [
-              {dataFeedId: "usdc.dai", value: 1.006}
+              {dataFeedId: "usdc.dai", value: 1.006 * EXTRA_PRECISION}
             ],
           }).getRedstonePayloadForManualUsage(uniProxy));
 
@@ -203,7 +205,7 @@ describe('Hypervisor', () => {
       const redstonePayload = await (new SimpleNumericMockWrapper({
           mockSignersCount: 10,
           dataPoints: [
-            {dataFeedId: "eth.usdc", value: 1.006}
+            {dataFeedId: "eth.usdc", value: 1.006 * EXTRA_PRECISION}
           ],
         }).getRedstonePayloadForManualUsage(uniProxy)); 
 
@@ -252,7 +254,7 @@ describe('Hypervisor', () => {
     const redstonePayload = await (new SimpleNumericMockWrapper({
         mockSignersCount: 10,
         dataPoints: [
-          {dataFeedId: "usdc.dai", value: 1.1}
+          {dataFeedId: "usdc.dai", value: 1.1 * EXTRA_PRECISION}
         ],
       }).getRedstonePayloadForManualUsage(uniProxy));
 

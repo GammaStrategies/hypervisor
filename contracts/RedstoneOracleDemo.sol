@@ -3,9 +3,9 @@
 pragma solidity 0.8.4;
 
 import "@redstone-finance/evm-connector/contracts/data-services/MainDemoConsumerBase.sol";
-import {Ownable} from '@openzeppelin8/contracts/access/Ownable.sol';
+import {Ownable2Step} from '@openzeppelin8/contracts/access/Ownable2Step.sol';
 
-contract RedstoneOracleDemo is MainDemoConsumerBase, Ownable {
+contract RedstoneOracleDemo is MainDemoConsumerBase, Ownable2Step {
     mapping (bytes32 => bytes32) priceFeedIdMapping;
 
     /**

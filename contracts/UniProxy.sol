@@ -3,7 +3,6 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "./interfaces/IRedstoneOracle.sol";
 import "./interfaces/IHypervisor.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 

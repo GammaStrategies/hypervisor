@@ -3,9 +3,9 @@
 pragma solidity 0.8.4;
 
 import "@redstone-finance/evm-connector/contracts/mocks/RedstoneConsumerNumericMock.sol";
-import {Ownable} from '@openzeppelin8/contracts/access/Ownable.sol';
+import {Ownable2Step} from '@openzeppelin8/contracts/access/Ownable2Step.sol';
 
-contract RedstoneOracleMock is RedstoneConsumerNumericMock, Ownable {
+contract RedstoneOracleMock is RedstoneConsumerNumericMock, Ownable2Step {
     mapping (bytes32 => bytes32) priceFeedIdMapping;
 
     /**
