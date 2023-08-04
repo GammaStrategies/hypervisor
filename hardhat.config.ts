@@ -75,7 +75,7 @@ const config: HardhatUserConfig = {
                     bytecodeHash: 'none',
                 },
             },
-        },
+        },        
         { version: '0.6.11' },
         { version: '0.6.0' },
         { version: '0.6.2' },

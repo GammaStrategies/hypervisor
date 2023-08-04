@@ -38,7 +38,7 @@ contract UniProxy is ReentrancyGuard {
 
   constructor(address _clearance) {
     owner = msg.sender;
-		clearance = IClearing(_clearance);	
+		clearance = IClearing(_clearance);
   }
 
   /// @notice Deposit into the given position
@@ -92,4 +92,5 @@ contract UniProxy is ReentrancyGuard {
     require(msg.sender == owner, "only owner");
     _;
   }
+
 }
