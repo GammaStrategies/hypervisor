@@ -1,17 +1,21 @@
 ## Hypervisor
 
-###
-A Uniswap V2-like interface with fungible liquidity to Uniswap V3
-which allows for arbitrary liquidity provision: one-sided, lop-sided, and
-balanced
+A Uniswap V2–style, **fungible-liquidity** interface built on Uniswap V3.  
+It supports **arbitrary liquidity provision**: one-sided, lop-sided, or balanced.
 
-Consult tests/deposit_withdraw.test.ts for deposit, withdrawal, rebalance examples
+For usage patterns (deposit, withdraw, rebalance), see: `tests/deposit_withdraw.test.ts`.
+
+---
 
 ### Tasks
 
-Deploys hypervisor
-
-`npx hardhat deploy-hypervisor-orphan --pool UNIV3-POOL-ADDRESS --name ERC20-NAME --symbol ERC20-SYMBOL --network NETWORK`
+**Deploy the Hypervisor**
+```bash
+npx hardhat deploy-hypervisor-orphan \
+  --pool UNIV3-POOL-ADDRESS \
+  --name "ERC20-NAME" \
+  --symbol ERC20-SYMBOL \
+  --network NETWORK
 
 Initialize hypervisor
 
