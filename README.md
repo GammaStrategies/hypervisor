@@ -17,6 +17,6 @@ Initialize hypervisor
 
 `npx hardhat initialize-hypervisor --hypervisor HYPERVISOR-ADDRESS --amount0 TOKEN0-AMOUNT --amount1 TOKEN1-AMOUNT --uniProxy UNIPROXY-ADDRESS --adminAddress ADMIN-ADDRESS --network NETWORK`
 
-### Testing
+### Test
 
 `npx hardhat test`
