@@ -1,13 +1,29 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "module": "commonjs",
-    "strict": true,
-    "esModuleInterop": true,
+    /* Hardhat/Node.js Targeting */
+    "target": "es2020",                                 // Ensures compatibility and good performance on modern Node.js.
+    "module": "commonjs",                               // Standard module system for Node/Hardhat.
+    
+    /* Strictness and Safety (Maximized) */
+    "strict": true,                                     // Enables all base strict flags.
+    "esModuleInterop": true,                            // Essential for import compatibility.
+    "forceConsistentCasingInFileNames": true,           // Prevents OS-dependent path errors.
+    
+    /* Added Maximum Strictness Flags */
+    "noImplicitReturns": true,                          // Forces all code paths in a function to return a value.
+    "noUncheckedIndexedAccess": true,                   // Makes array/map access potentially 'undefined', enforcing checks.
+    "exactOptionalPropertyTypes": true,                 // Disallows 'null' for optional properties.
+    "noPropertyAccessFromIndexSignature": true,         // Prevents error-prone property access after dynamic indexing.
+    
+    /* Output and Type Resolution (Hardhat Specific) */
     "outDir": "dist",
-    "typeRoots": ["./typechain", "./node_modules/@types"],
-    "types": ["@nomiclabs/hardhat-ethers", "@nomiclabs/hardhat-waffle"]
+    "typeRoots": ["./typechain", "./node_modules/@types"], // CRITICAL: Includes Typechain generated contract types.
+    "types": ["@nomiclabs/hardhat-ethers", "@nomiclabs/hardhat-waffle"], // Loads specific Hardhat plugin types.
+    
+    /* Cleanliness */
+    "resolveJsonModule": true,                          // Allows importing JSON files.
+    "skipLibCheck": true                                // Speeds up compilation by skipping checks on library declaration files.
   },
-  "include": ["./scripts", "./test"],
-  "files": ["./hardhat.config.ts"]
+  "include": ["./scripts", "./test"],                   // Include all scripts and tests for compilation.
+  "files": ["./hardhat.config.ts"]                      // Explicitly include the configuration file.
 }
