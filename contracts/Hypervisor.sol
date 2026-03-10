@@ -101,8 +101,8 @@ contract Hypervisor is IUniswapV3MintCallback, ERC20Permit, ReentrancyGuard {
     }
 
     /// @notice Deposit tokens
-    /// @param deposit0 Amount of token0 transfered from sender to Hypervisor
-    /// @param deposit1 Amount of token1 transfered from sender to Hypervisor
+    /// @param deposit0 Amount of token0 transferred from sender to Hypervisor
+    /// @param deposit1 Amount of token1 transferred from sender to Hypervisor
     /// @param to Address to which liquidity tokens are minted
     /// @param from Address from which asset tokens are transferred
     /// @param inMin min spend for directDeposit is true 
